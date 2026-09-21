@@ -23,19 +23,32 @@ npm run dev
 Requiere un `.env.local` con `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`
 (ver `.env.local.example`).
 
-## Estado (Fase 1 de 4 — Base)
+## Estado — Fases 1 a 4 completas
 
-- [x] Repo y proyecto de Supabase nuevos, esquema completo desde el inicio.
-- [x] Autenticación (email + contraseña, Supabase Auth).
-- [x] Layout, navegación inferior y estilo visual (opción C: minimalista
-      oscuro, elegida por el usuario entre 3 mockups).
-- [ ] Fase 2 — Organización: Cuaderno, Tareas, Mis 3 cosas, Gramática.
-- [ ] Fase 3 — Aprendizaje activo: Vocabulario + SRS, ejercicios de
-      gramática, dictado, pronunciación, escritura, conversación simulada
-      (diálogos guiados, sin IA).
-- [ ] Fase 4 — Motivación: gamificación, estadísticas detalladas.
+- [x] **Fase 1 — Base**: repo y proyecto de Supabase nuevos, esquema
+      completo desde el inicio, autenticación, layout, navegación inferior
+      y estilo visual (opción C: minimalista oscuro, elegida entre 3
+      mockups).
+- [x] **Fase 2 — Organización**: Cuaderno (clasifica solo vocabulario,
+      tareas y gramática; detecta la fecha de la clase del texto), Tareas
+      (con detección de ejercicio automático disponible), Mis 3 cosas de
+      la semana, Gramática — todo agrupado en "Mi Clase".
+- [x] **Fase 3 — Aprendizaje activo**: Practicar con 5 modos (Vocabulario
+      SRS, Gramática con banco ampliable + ejercicios personalizados
+      generados de tus propias tareas/notas, Dictado, Pronunciación,
+      Conversación con diálogos guiados) + Diario (libre + guiado).
+- [x] **Fase 4 — Motivación**: puntos, 8 logros, progreso detallado.
 - [ ] Fuera de esta v1 del proyecto: notificaciones push, rol docente con
-      edición en vivo del cuaderno (esquema ya reservado en `shared_access`).
+      edición en vivo del cuaderno (esquema ya reservado en
+      `shared_access`), sugerencias de vocabulario vía DeepL (necesita que
+      consigas tu propia clave de API — mientras tanto usa un banco
+      curado, igual que v1).
+
+## Banco de contenido (`exercise_bank`)
+
+Tabla ampliable sin tocar código: 24 ejercicios de gramática (to be,
+futuro, pasado), 15 frases de dictado, 8 consignas de escritura y 3
+diálogos guiados. Se puede seguir agregando contenido con `INSERT`.
 
 ## Multiusuario
 
