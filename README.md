@@ -3,7 +3,7 @@
 Reconstrucción completa de IngApp desde una toma de requerimientos real
 (no iteración al azar). La v1 quedó pausada en el repo `IngApp-v1`.
 
-**En vivo:** (se agrega cuando se publique el primer deploy)
+**En vivo:** https://jonnyalegria-prog.github.io/IngApp/
 
 ## Documentos del proyecto
 
