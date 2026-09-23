@@ -1,4 +1,5 @@
 import * as storage from './storage'
+import { localDateString } from './week'
 
 export async function exportAllData(): Promise<void> {
   const [words, grammarTopics, notebookEntries, homeworkTasks, discoveryPicks, settings] = await Promise.all([
@@ -24,7 +25,7 @@ export async function exportAllData(): Promise<void> {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `ingapp-backup-${new Date().toISOString().slice(0, 10)}.json`
+  a.download = `ingapp-backup-${localDateString()}.json`
   a.click()
   URL.revokeObjectURL(url)
 }

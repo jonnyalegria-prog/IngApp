@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react'
 import { Flame } from 'lucide-react'
-import { supabase } from '../lib/supabase'
+import { getSettings, STREAK_UPDATED_EVENT } from '../lib/storage'
 
 export default function TopBar() {
   const [streak, setStreak] = useState(0)
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) return
-      const { data: settings } = await supabase.from('user_settings').select('streak').eq('user_id', data.user.id).maybeSingle()
-      setStreak(settings?.streak ?? 0)
-    })
+    const refresh = () => {
+      getSettings()
+        .then((s) => setStreak(s.streak))
+        .catch(() => {})
+    }
+    refresh()
+    window.addEventListener(STREAK_UPDATED_EVENT, refresh)
+    return () => window.removeEventListener(STREAK_UPDATED_EVENT, refresh)
   }, [])
 
   return (

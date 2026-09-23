@@ -1,9 +1,12 @@
 import { supabase } from './supabase'
+import { daysBetween, localDateString } from './week'
 import type { AppSettings, EnglishLevel, GrammarTopic, HomeworkTask, DiscoveryPick, NotebookEntry, Word } from './types'
 
 // v2 is always cloud-backed (Supabase) — no local-only fallback like v1,
 // since both users need sync from day one and offline was declared
 // unnecessary in the requirements.
+
+export const STREAK_UPDATED_EVENT = 'ingapp:streak-updated'
 
 function mapWord(row: any): Word {
   return {
@@ -185,9 +188,13 @@ export async function getSettings(): Promise<AppSettings> {
   const { data, error } = await supabase.from('user_settings').select('*').eq('user_id', userId).maybeSingle()
   if (error) throw error
   if (!data) return { streak: 0, level: 'principiante' }
+  const lastPracticeDate: string | undefined = data.last_practice_date ?? undefined
+  // Si pasó más de un día sin practicar, la racha ya se cortó aunque la base
+  // todavía guarde el número viejo (se reinicia recién en la próxima práctica).
+  const streakAlive = lastPracticeDate !== undefined && daysBetween(lastPracticeDate, localDateString()) <= 1
   return {
-    streak: data.streak,
-    lastPracticeDate: data.last_practice_date ?? undefined,
+    streak: streakAlive ? data.streak : 0,
+    lastPracticeDate,
     level: (data.level ?? 'principiante') as EnglishLevel,
   }
 }
@@ -205,12 +212,10 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
 
 export async function registerPracticeToday(): Promise<AppSettings> {
   const settings = await getSettings()
-  const today = new Date().toISOString().slice(0, 10)
+  const today = localDateString()
   if (settings.lastPracticeDate === today) return settings
 
-  const yesterday = new Date()
-  yesterday.setDate(yesterday.getDate() - 1)
-  const wasYesterday = settings.lastPracticeDate === yesterday.toISOString().slice(0, 10)
+  const wasYesterday = settings.lastPracticeDate !== undefined && daysBetween(settings.lastPracticeDate, today) === 1
 
   const updated: AppSettings = {
     ...settings,
@@ -218,5 +223,7 @@ export async function registerPracticeToday(): Promise<AppSettings> {
     lastPracticeDate: today,
   }
   await saveSettings(updated)
+  // Avisa a la barra superior para que la llama se actualice sin recargar.
+  window.dispatchEvent(new Event(STREAK_UPDATED_EVENT))
   return updated
 }
