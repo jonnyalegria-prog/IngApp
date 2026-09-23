@@ -38,11 +38,46 @@ Requiere un `.env.local` con `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`
       generados de tus propias tareas/notas, Dictado, Pronunciación,
       Conversación con diálogos guiados) + Diario (libre + guiado).
 - [x] **Fase 4 — Motivación**: puntos, 8 logros, progreso detallado.
-- [ ] Fuera de esta v1 del proyecto: notificaciones push, rol docente con
-      edición en vivo del cuaderno (esquema ya reservado en
-      `shared_access`), sugerencias de vocabulario vía DeepL (necesita que
-      consigas tu propia clave de API — mientras tanto usa un banco
-      curado, igual que v1).
+- [x] **DeepL**: traducción con contexto, sugerencias de vocabulario por nivel,
+      lectura con traducción al toque y retro-traducción en escritura
+      guiada (ver sección "DeepL" abajo).
+- [ ] Fuera de esta versión: notificaciones push y rol docente con edición
+      en vivo del cuaderno (esquema ya reservado en `shared_access`).
+
+## DeepL
+
+Usos, todos con el texto del banco de contenido o palabras sueltas (nunca el
+Cuaderno ni el Diario libre):
+
+- **Vocabulario → 🌐 Traducir**: completa el campo vacío (EN→ES o ES→EN),
+  usando el ejemplo como contexto.
+- **Vocabulario → Palabras nuevas para vos**: sugerencias por nivel
+  (`vocab_bank`), traducidas según su ejemplo.
+- **Practicar → Lectura**: textos por nivel (`reading_texts`) o texto propio;
+  tocás una palabra y ves su significado según la oración.
+- **Dictado / Conversación**: 🌐 para ver el significado en español.
+- **Diario → Consignas guiadas**: traducción de referencia de DeepL y
+  "retro-traducción" de tu respuesta (más corrección de LanguageTool).
+
+Cómo está armado:
+
+- La clave de DeepL API Free vive en **Supabase Vault** (`deepl_api_key`). Solo
+  la lee la Edge Function `supabase/functions/deepl` mediante
+  `public.get_deepl_key()` (ejecutable únicamente por `service_role`). Nunca
+  está en el repo ni en el navegador.
+- La función exige un usuario logueado (`verify_jwt` **y** `auth.getUser`: la
+  clave pública `anon` pasa la primera verificación, no la segunda).
+- Caché compartido `translation_cache` (cada texto del banco se traduce una
+  sola vez para todos) y tope mensual por usuario en `translation_usage`
+  (300.000 de los 1.000.000 caracteres/mes del plan Free); máx. 1.500
+  caracteres por pedido.
+- Para cambiar la clave: `select vault.update_secret(id, 'nueva-clave')` desde
+  el SQL Editor de Supabase (el `id` sale de `select id from vault.secrets
+  where name = 'deepl_api_key'`).
+- **Recomendado:** cuando Jonny y Constanza ya tengan cuenta, desactivar el
+  registro abierto en Supabase → Authentication → Sign In / Providers →
+  "Allow new users to sign up". Sin eso cualquiera podría crear una cuenta y
+  gastar el cupo de DeepL.
 
 ## Banco de contenido (`exercise_bank`)
 

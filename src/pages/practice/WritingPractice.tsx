@@ -99,6 +99,7 @@ interface GuidedResult {
   matches: GrammarMatch[] | null
   backTranslation?: string
   backError?: string
+  reference?: string
   correct?: boolean
 }
 
@@ -133,14 +134,17 @@ function GuidedWriting() {
       }
       // Gramática (LanguageTool) + "retro-traducción": DeepL vuelve tu frase al español
       // para que compares si dice lo que querías decir.
-      const [grammar, back] = await Promise.allSettled([
+      // En las consignas "Traducí" también se trae la traducción de referencia de DeepL (ya cacheada).
+      const [grammar, back, reference] = await Promise.allSettled([
         checkGrammar(answer),
         translateOne(answer.trim(), { from: 'en', to: 'es' }),
+        sourceSentence ? translateOne(sourceSentence, { from: 'es', to: 'en', cache: true }) : Promise.resolve(undefined),
       ])
       setResult({
         matches: grammar.status === 'fulfilled' ? grammar.value : null,
         backTranslation: back.status === 'fulfilled' ? back.value : undefined,
         backError: back.status === 'rejected' ? errorMessage(back.reason) : undefined,
+        reference: reference.status === 'fulfilled' ? reference.value : undefined,
       })
     } finally {
       setChecking(false)
@@ -187,7 +191,7 @@ function GuidedWriting() {
       </div>
 
       {revealed && current.example && <p className="mt-3 text-sm italic text-emerald-400">Ejemplo: "{current.example}"</p>}
-      {sourceSentence && <TranslateLine text={sourceSentence} from="es" to="en" label="Ver la traducción de DeepL" />}
+      {sourceSentence && !result && <TranslateLine text={sourceSentence} from="es" to="en" label="Ver la traducción de DeepL" />}
 
       {result?.correct !== undefined && (
         <p className={`mt-3 text-sm font-medium ${result.correct ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -198,14 +202,20 @@ function GuidedWriting() {
       {result && !isCloze && result.matches === null && (
         <p className="mt-3 text-sm text-amber-400">No se pudo conectar con el corrector de gramática.</p>
       )}
+      {result?.reference && (
+        <div className="mt-3 rounded-md border border-emerald-700/40 bg-emerald-950/30 p-3 text-sm">
+          <p className="text-slate-400">Así lo traduce DeepL:</p>
+          <p className="text-emerald-300">{result.reference}</p>
+          <p className="mt-1 text-xs text-slate-500">Puede haber más de una forma correcta: fijate en el tiempo verbal y el orden.</p>
+        </div>
+      )}
       {result?.backTranslation && (
         <div className="mt-3 rounded-md border border-sky-700/40 bg-sky-950/30 p-3 text-sm">
           <p className="text-slate-400">Tu frase, en español, dice:</p>
           <p className="text-sky-300">{result.backTranslation}</p>
           {sourceSentence ? (
             <p className="mt-1 text-slate-400">
-              Consigna original: <span className="text-white">{sourceSentence}</span>. Si el sentido es el mismo, tu traducción
-              funciona.
+              La consigna decía: <span className="text-white">“{sourceSentence}”</span>
             </p>
           ) : (
             <p className="mt-1 text-slate-400">¿Es lo que querías decir?</p>
