@@ -33,7 +33,7 @@ export default function GrammarPractice() {
   if (mode === 'menu') {
     return (
       <div className="flex flex-col gap-3">
-        <p className="text-slate-400">Elegí qué practicar.</p>
+        <p className="text-slate-400">Elige qué practicar.</p>
         {personalCloze.length > 0 && (
           <button
             onClick={() => setMode('personal')}
@@ -98,7 +98,7 @@ function PersonalClozeSession({ exercises, onExit }: { exercises: ClozeExercise[
         value={input}
         onChange={(e) => setInput(e.target.value)}
         disabled={checked}
-        placeholder="Completá el espacio en blanco..."
+        placeholder="Completa el espacio en blanco..."
         className="w-full max-w-md rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white placeholder:text-slate-500 disabled:opacity-70"
       />
       {!checked ? (
@@ -115,7 +115,7 @@ function PersonalClozeSession({ exercises, onExit }: { exercises: ClozeExercise[
       ) : (
         <div className="flex flex-col items-center gap-2">
           <p className={`text-sm font-medium ${isCorrect ? 'text-emerald-400' : 'text-red-400'}`}>
-            {isCorrect ? '¡Correcto! 🎉' : `Correcto: "${current.answer}"`}
+            {isCorrect ? '¡Buena! 🎉' : `Pucha, era "${current.answer}"`}
           </p>
           <button
             onClick={() => {

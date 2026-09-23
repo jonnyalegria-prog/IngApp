@@ -13,15 +13,15 @@ export default function GrammarFeedback({ items, partial }: Props) {
     <div className="mt-4 flex flex-col gap-3">
       {partial && (
         <p className="text-sm text-amber-400">
-          No pude conectar con el corrector principal, así que solo revisé errores típicos. Probá de nuevo en un rato.
+          No pude conectar con el corrector principal, así que solo revisé errores típicos. Prueba de nuevo en un ratito.
         </p>
       )}
 
       {items.length === 0 ? (
         !partial && (
           <div className="rounded-xl border border-emerald-700/40 bg-emerald-950/20 p-3 text-sm">
-            <p className="font-medium text-emerald-300">¡Muy bien! No encontré errores 🎉</p>
-            <p className="mt-1 text-slate-400">El corrector no lo ve todo: si algo te suena raro, consultalo con tu profe.</p>
+            <p className="font-medium text-emerald-300">¡Bacán! No encontré errores 🎉</p>
+            <p className="mt-1 text-slate-400">El corrector no lo ve todo: si algo te suena raro, consúltalo con tu profe.</p>
           </div>
         )
       ) : (
@@ -51,7 +51,7 @@ export default function GrammarFeedback({ items, partial }: Props) {
 
               {item.suggestions.length > 0 && (
                 <p className="mt-2 flex flex-wrap items-center gap-1.5 text-slate-400">
-                  Probá así:
+                  Prueba así:
                   {item.suggestions.map((s) => (
                     <span
                       key={s}

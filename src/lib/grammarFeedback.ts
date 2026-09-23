@@ -55,7 +55,7 @@ const EXPLANATIONS: Record<string, Explain> = {
   }),
   CONFUSION_OF_ME_I: () => ({
     title: '«I» o «me»',
-    text: 'Cuando sos vos quien hace la acción, se usa «I», no «me». Y si hablás de otra persona y de vos, la otra persona va primero: «He and I go».',
+    text: 'Cuando eres tú quien hace la acción, se usa «I», no «me». Y si hablas de otra persona y de ti, la otra persona va primero: «He and I go».',
   }),
   ENGLISH_WORD_REPEAT_RULE: ({ fragment }) => ({
     title: 'Palabra repetida',
@@ -74,9 +74,9 @@ const EXPLANATIONS: Record<string, Explain> = {
     text: 'Con adjetivos cortos el comparativo ya termina en -er (taller, bigger). «More» se usa con los largos: more interesting.',
   }),
   MORFOLOGIK_RULE_EN_US: ({ fragment, suggestion }) => ({
-    title: 'Revisá cómo se escribe',
+    title: 'Revisa cómo se escribe',
     text: suggestion
-      ? `No encuentro «${fragment}» en inglés. Puede ser un error al tipear: mirá si alguna de las sugerencias es lo que querías escribir. (Si es un nombre propio, está bien.)`
+      ? `No encuentro «${fragment}» en inglés. Puede ser un error al tipear: mira si alguna de las sugerencias es lo que querías escribir. (Si es un nombre propio, está bien.)`
       : `No encuentro «${fragment}» en inglés. Puede ser un error al tipear o un nombre propio.`,
   }),
   WANT_THAT_I: () => ({
@@ -129,7 +129,7 @@ const EXPLANATIONS: Record<string, Explain> = {
   }),
   SAY_TELL: () => ({
     title: '«Say» o «tell»',
-    text: '«Say» se usa sin decir a quién («He said hello»). Si nombrás a la persona, se usa «tell»: «He told me that…».',
+    text: '«Say» se usa sin decir a quién («He said hello»). Si nombras a la persona, se usa «tell»: «He told me that…».',
   }),
   LET_IT_INFINITIVE: () => ({
     title: 'Sin «to» después de «let»',
@@ -150,15 +150,15 @@ const STYLE_CATEGORIES = new Set([
 ])
 
 const CATEGORY_TEXT: Record<string, { title: string; text: string }> = {
-  TYPOS: { title: 'Revisá la ortografía', text: 'Puede haber un error de escritura acá.' },
-  GRAMMAR: { title: 'Revisá la gramática', text: 'Esta parte no suena bien en inglés: puede haber un error de estructura o de concordancia.' },
-  CASING: { title: 'Mayúsculas y minúsculas', text: 'Revisá si esta palabra lleva mayúscula o minúscula.' },
-  PUNCTUATION: { title: 'Puntuación', text: 'Revisá los signos de puntuación acá.' },
-  TYPOGRAPHY: { title: 'Espacios y signos', text: 'Revisá los espacios y los signos de esta parte.' },
+  TYPOS: { title: 'Revisa la ortografía', text: 'Puede haber un error de escritura acá.' },
+  GRAMMAR: { title: 'Revisa la gramática', text: 'Esta parte no suena bien en inglés: puede haber un error de estructura o de concordancia.' },
+  CASING: { title: 'Mayúsculas y minúsculas', text: 'Revisa si esta palabra lleva mayúscula o minúscula.' },
+  PUNCTUATION: { title: 'Puntuación', text: 'Revisa los signos de puntuación acá.' },
+  TYPOGRAPHY: { title: 'Espacios y signos', text: 'Revisa los espacios y los signos de esta parte.' },
   CONFUSED_WORDS: { title: 'Palabras que se confunden', text: 'Parece que mezclaste dos palabras que se parecen.' },
 }
 
-const GENERIC = { title: 'Revisá esta parte', text: 'El corrector marcó algo acá. Mirá la sugerencia de abajo.' }
+const GENERIC = { title: 'Revisa esta parte', text: 'El corrector marcó algo acá. Mira la sugerencia de abajo.' }
 const STYLE = {
   title: 'Se entiende, pero se puede decir mejor',
   text: 'Es solo una sugerencia de estilo: lo que escribiste no está mal.',
@@ -224,7 +224,7 @@ export async function reviewText(text: string): Promise<ReviewResult> {
     checkerOffline = true
   }
 
-  // Las reglas propias son más específicas (y con explicación pensada para vos): si coinciden
+  // Las reglas propias son más específicas (y con explicación pensada para ti): si coinciden
   // con un aviso de LanguageTool en el mismo lugar, se queda la propia.
   const own: GrammarMatch[] = []
   for (const candidate of findSpanishSpeakerMistakes(text)) {

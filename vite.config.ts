@@ -18,7 +18,7 @@ export default defineConfig({
       manifest: {
         name: 'IngApp - Práctica de inglés',
         short_name: 'IngApp',
-        description: 'Complemento para aprender inglés entre clases',
+        description: 'Tu compañero para aprender inglés entre clases',
         theme_color: '#7c3aed',
         background_color: '#0f172a',
         display: 'standalone',

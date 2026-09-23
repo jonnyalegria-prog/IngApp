@@ -10,7 +10,7 @@ function today() {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso + 'T00:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })
+  return new Date(iso + 'T00:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 export default function Notebook() {
@@ -31,7 +31,7 @@ export default function Notebook() {
   }, [])
 
   // Se detecta al escribir o pegar (no al salir del cuadro: en iPhone tocar un botón puede no contar como salir).
-  // Si vos elegís la fecha a mano, esa manda.
+  // Si eliges la fecha a mano, esa manda.
   function handleNotesChange(text: string) {
     setRawText(text)
     if (dateManual) return
@@ -104,9 +104,9 @@ export default function Notebook() {
   return (
     <div className="flex flex-col gap-6">
       <p className="text-sm text-slate-400">
-        Pegá tus apuntes tal cual los tomás en clase. Al guardar, la app separa sola el vocabulario nuevo, las
-        tareas para la semana (a la pestaña de Tareas) y manda el resto a Gramática. Si escribís algo como
-        "Clase 13/09", "Domingo 13/09" o "13 de septiembre" (día y mes, en una línea), detecta la fecha sola.
+        Pega tus apuntes tal cual los tomas en clase. Al guardar, la app separa solita el vocabulario nuevo, las
+        tareas de la semana (van a la pestaña Tareas) y manda el resto a Gramática. Si escribes algo como
+        "Clase 13/09", "Domingo 13/09" o "13 de septiembre" (día y mes, en una línea), también detecta la fecha solita.
       </p>
 
       <form onSubmit={handleSave} className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
@@ -142,16 +142,16 @@ export default function Notebook() {
 
         {lastResult && (
           <p className="mt-3 text-sm text-emerald-400">
-            Guardado: {lastResult.vocabCount} palabra(s)
+            ¡Listo! Guardé {lastResult.vocabCount} palabra(s)
             {lastResult.taskCount > 0 && `, ${lastResult.taskCount} tarea(s)`}
-            {lastResult.grammarSaved ? ' y notas de gramática agregadas.' : '.'}
+            {lastResult.grammarSaved ? ' y las notas de gramática.' : '.'}
           </p>
         )}
       </form>
 
       <div className="flex flex-col gap-2">
         <h2 className="font-medium text-white">Clases anteriores ({entries.length})</h2>
-        {entries.length === 0 && <p className="text-sm text-slate-400">Todavía no guardaste ninguna clase.</p>}
+        {entries.length === 0 && <p className="text-sm text-slate-400">Aún no has guardado ninguna clase.</p>}
         {entries.map((entry) => (
           <div key={entry.id} className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
             <button

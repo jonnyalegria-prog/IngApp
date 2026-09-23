@@ -51,10 +51,10 @@ Cuaderno ni el Diario libre):
 
 - **Vocabulario → 🌐 Traducir**: completa el campo vacío (EN→ES o ES→EN),
   usando el ejemplo como contexto.
-- **Vocabulario → Palabras nuevas para vos**: sugerencias por nivel
+- **Vocabulario → Palabras nuevas para ti**: sugerencias por nivel
   (`vocab_bank`), traducidas según su ejemplo.
 - **Practicar → Lectura**: textos por nivel (`reading_texts`) o texto propio;
-  tocás una palabra y ves su significado según la oración.
+  tocas una palabra y ves su significado según la oración.
 - **Dictado / Conversación**: 🌐 para ver el significado en español.
 - **Diario → Consignas guiadas**: traducción de referencia de DeepL y
   "retro-traducción" de tu respuesta (más corrección de LanguageTool).

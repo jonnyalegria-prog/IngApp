@@ -15,7 +15,7 @@ interface Props {
   onAdd: (term: string, translation: string, example?: string) => Promise<void>
 }
 
-/** "Palabras nuevas para vos": sugerencias por nivel con traducción de DeepL según el ejemplo. */
+/** "Palabras nuevas para ti": sugerencias por nivel con traducción de DeepL según el ejemplo. */
 export default function VocabSuggestions({ existingTerms, onAdd }: Props) {
   const [settings, setSettings] = useState<AppSettings>({ streak: 0, level: 'principiante' })
   const [suggestions, setSuggestions] = useState<VocabSuggestion[]>([])
@@ -67,7 +67,7 @@ export default function VocabSuggestions({ existingTerms, onAdd }: Props) {
   return (
     <section className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-medium text-white">Palabras nuevas para vos</h2>
+        <h2 className="font-medium text-white">Palabras nuevas para ti</h2>
         <select
           value={settings.level}
           onChange={(e) => changeLevel(e.target.value as EnglishLevel)}
@@ -115,7 +115,7 @@ export default function VocabSuggestions({ existingTerms, onAdd }: Props) {
       )}
 
       {asked && exhausted && suggestions.length === 0 && (
-        <p className="mt-3 text-sm text-slate-400">¡Ya tenés todas las palabras del banco para este nivel! Probá con otro nivel.</p>
+        <p className="mt-3 text-sm text-slate-400">¡Ya tienes todas las palabras del banco para este nivel! Prueba con otro nivel.</p>
       )}
       {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
 
@@ -124,7 +124,7 @@ export default function VocabSuggestions({ existingTerms, onAdd }: Props) {
         disabled={loading}
         className="mt-3 rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-40"
       >
-        {loading ? 'Buscando...' : suggestions.length > 0 ? 'Otras 5 palabras' : 'Sugerime 5 palabras'}
+        {loading ? 'Buscando...' : suggestions.length > 0 ? 'Otras 5 palabras' : 'Dame 5 palabras'}
       </button>
     </section>
   )

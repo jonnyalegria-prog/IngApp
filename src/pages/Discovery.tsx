@@ -67,8 +67,8 @@ export default function Discovery() {
   return (
     <div className="flex flex-col gap-6">
       <p className="text-sm text-slate-400">
-        Lo que tu profesora te pide cada clase: 3 cosas nuevas que aprendiste durante la semana. Anotalas acá a
-        medida que las vas encontrando, así llegás al domingo con todo listo.
+        Lo que tu profe te pide cada clase: 3 cosas nuevas que aprendiste durante la semana. Anótalas acá a
+        medida que las vas encontrando, así llegas al domingo con todo listo.
       </p>
 
       <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">

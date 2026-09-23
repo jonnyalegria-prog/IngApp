@@ -49,8 +49,8 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold text-white">Hola de nuevo 👋</h1>
-        <p className="text-slate-400">Tu complemento diario para las clases de inglés.</p>
+        <h1 className="text-2xl font-semibold text-white">¡Hola de nuevo! 👋</h1>
+        <p className="text-slate-400">Tu compañero para las clases de inglés, todos los días.</p>
       </div>
 
       <div className="grid grid-cols-3 gap-3">
@@ -64,7 +64,7 @@ export default function Dashboard() {
         <div className="flex flex-col gap-2 text-sm text-slate-300">
           <Link to="/mi-clase?tab=tareas" className="flex items-center gap-2 hover:text-white">
             <ClipboardList size={16} className="text-violet-400" />
-            {pendingTasks === 0 ? 'No tenés tareas pendientes' : `${pendingTasks} tarea(s) pendiente(s)`}
+            {pendingTasks === 0 ? '¡No tienes tareas pendientes! 🎉' : `${pendingTasks} tarea(s) pendiente(s)`}
           </Link>
           <Link to="/mi-clase?tab=descubrir" className="flex items-center gap-2 hover:text-white">
             <Lightbulb size={16} className="text-violet-400" />
@@ -83,7 +83,7 @@ export default function Dashboard() {
         />
         <ActionCard to="/mi-clase" title="Mi Clase" description="Notas, tareas y gramática" icon={GraduationCap} />
         <ActionCard to="/vocabulario" title="Vocabulario" description="Tu lista de palabras" icon={BookOpen} />
-        <ActionCard to="/diario" title="Diario" description="Escribí y corregí" icon={PenLine} />
+        <ActionCard to="/diario" title="Diario" description="Escribe y te ayudo a corregir" icon={PenLine} />
       </div>
 
       <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">

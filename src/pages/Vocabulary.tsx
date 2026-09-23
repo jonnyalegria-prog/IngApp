@@ -19,11 +19,11 @@ export default function Vocabulary() {
       <div>
         <h1 className="text-2xl font-semibold text-white">Vocabulario</h1>
         <p className="text-slate-400">
-          Para cargar todo lo de una clase de una vez, usá el{' '}
+          Para cargar todo lo de una clase de una vez, usa el{' '}
           <Link to="/mi-clase?tab=notas" className="text-violet-400 hover:underline">
             Cuaderno
           </Link>
-          . Acá podés agregar palabras sueltas rápido.
+          . Acá puedes agregar palabras sueltas al tiro.
         </p>
       </div>
       <AddWordForm onAdd={addWord} />
@@ -127,7 +127,7 @@ function AddWordForm({
         >
           {translating ? 'Traduciendo...' : '🌐 Traducir'}
         </button>
-        <span className="text-xs text-slate-500">Completá un campo y traduzco el otro.</span>
+        <span className="text-xs text-slate-500">Completa un campo y traduzco el otro.</span>
       </div>
       {translateError && <p className="mt-2 text-sm text-red-400">{translateError}</p>}
     </form>
@@ -145,7 +145,7 @@ function WordList({
     <div>
       <h2 className="mb-3 font-medium text-white">Todas tus palabras ({words.length})</h2>
       <div className="flex flex-col divide-y divide-slate-800 rounded-2xl border border-slate-800 bg-slate-900">
-        {words.length === 0 && <p className="p-4 text-sm text-slate-400">Todavía no agregaste vocabulario.</p>}
+        {words.length === 0 && <p className="p-4 text-sm text-slate-400">Aún no has agregado vocabulario. ¡Parte con tu primera palabra!</p>}
         {[...words].reverse().map((word) => (
           <div key={word.id} className="flex items-center justify-between gap-3 p-3">
             <div>

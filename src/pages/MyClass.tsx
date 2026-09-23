@@ -28,7 +28,7 @@ export default function MyClass() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold text-white">Mi Clase</h1>
-        <p className="text-slate-400">Todo lo que gira en torno a tu clase semanal.</p>
+        <p className="text-slate-400">Todo lo de tu clase semanal, en un solo lugar.</p>
       </div>
 
       <div className="flex gap-1 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900 p-1">

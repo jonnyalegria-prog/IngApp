@@ -20,7 +20,7 @@ export const achievements: Achievement[] = [
   { id: 'vocab-100', title: 'Coleccionista', description: '100 palabras cargadas', check: (d) => d.wordsCount >= 100 },
   { id: 'streak-7', title: 'Una semana seguida', description: '7 días de racha', check: (d) => d.streak >= 7 },
   { id: 'streak-30', title: 'Un mes de constancia', description: '30 días de racha', check: (d) => d.streak >= 30 },
-  { id: 'notebook-5', title: 'Cuaderno prolijo', description: '5 clases registradas', check: (d) => d.notebookEntries >= 5 },
+  { id: 'notebook-5', title: 'Cuaderno ordenadito', description: '5 clases registradas', check: (d) => d.notebookEntries >= 5 },
   { id: 'tasks-10', title: 'Cumplidor', description: '10 tareas completadas', check: (d) => d.tasksCompleted >= 10 },
   { id: 'weeks-5', title: 'Reportero semanal', description: '5 semanas con "Mis 3 cosas" completas', check: (d) => d.completeWeeks >= 5 },
 ]

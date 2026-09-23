@@ -97,11 +97,11 @@ function GuidedWriting() {
   }, [])
 
   if (!prompts) return <p className="text-slate-400">Cargando...</p>
-  if (prompts.length === 0) return <p className="text-slate-400">Todavía no hay consignas cargadas.</p>
+  if (prompts.length === 0) return <p className="text-slate-400">Aún no hay consignas cargadas.</p>
   const current = prompts[index % prompts.length]
   const isTranslation = current.topic === 'traduccion'
   const isCloze = current.topic === 'completar'
-  // Las consignas "Traducí" traen la frase en español entre comillas.
+  // Las consignas "Traduce" traen la frase en español entre comillas.
   const sourceSentence = isTranslation ? current.instruction.match(/["“](.+)["”]/)?.[1] : undefined
 
   async function handleCheck() {
@@ -116,7 +116,7 @@ function GuidedWriting() {
       }
       // Gramática (LanguageTool) + "retro-traducción": DeepL vuelve tu frase al español
       // para que compares si dice lo que querías decir.
-      // En las consignas "Traducí" también se trae la traducción de referencia de DeepL (ya cacheada).
+      // En las consignas "Traduce" también se trae la traducción de referencia de DeepL (ya cacheada).
       const [grammar, back, reference] = await Promise.allSettled([
         reviewText(answer),
         translateOne(answer.trim(), { from: 'en', to: 'es' }),
@@ -153,7 +153,7 @@ function GuidedWriting() {
         maxLength={1000}
         lang="en"
         translate="no"
-        placeholder="Escribí tu respuesta..."
+        placeholder="Escribe tu respuesta..."
         className="mt-3 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white placeholder:text-slate-500"
       />
       <div className="mt-3 flex flex-wrap gap-2">
@@ -179,7 +179,7 @@ function GuidedWriting() {
 
       {result?.correct !== undefined && (
         <p className={`mt-3 text-sm font-medium ${result.correct ? 'text-emerald-400' : 'text-red-400'}`}>
-          {result.correct ? '¡Correcto! 🎉' : `No coincide. Respuesta esperada: "${current.example}"`}
+          {result.correct ? '¡Buena! 🎉' : `Pucha, no coincide. Lo esperado era: "${current.example}"`}
         </p>
       )}
       {result?.review && <GrammarFeedback items={result.review.items} partial={result.review.checkerOffline} />}
@@ -187,7 +187,7 @@ function GuidedWriting() {
         <div className="mt-3 rounded-md border border-emerald-700/40 bg-emerald-950/30 p-3 text-sm">
           <p className="text-slate-400">Así lo traduce DeepL:</p>
           <p className="text-emerald-300">{result.reference}</p>
-          <p className="mt-1 text-xs text-slate-500">Puede haber más de una forma correcta: fijate en el tiempo verbal y el orden.</p>
+          <p className="mt-1 text-xs text-slate-500">Puede haber más de una forma correcta: fíjate en el tiempo verbal y el orden.</p>
         </div>
       )}
       {result?.backTranslation && (

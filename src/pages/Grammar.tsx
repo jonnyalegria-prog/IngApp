@@ -39,7 +39,7 @@ export default function Grammar() {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-sm text-slate-400">Anotá los temas que ves en tus clases particulares para no perderlos de vista.</p>
+      <p className="text-sm text-slate-400">Anota los temas que ves en tus clases particulares para no perderlos de vista.</p>
 
       <form onSubmit={addTopic} className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
         <input
@@ -61,7 +61,7 @@ export default function Grammar() {
       </form>
 
       <div className="flex flex-col gap-3">
-        {topics.length === 0 && <p className="text-sm text-slate-400">Todavía no registraste temas de gramática.</p>}
+        {topics.length === 0 && <p className="text-sm text-slate-400">Aún no has registrado temas de gramática.</p>}
         {topics.map((topic) => (
           <div key={topic.id} className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
             <div className="flex items-start justify-between gap-2">
@@ -73,9 +73,9 @@ export default function Grammar() {
             {topic.notes && <p className="mt-1 whitespace-pre-wrap text-sm text-slate-400">{topic.notes}</p>}
             <div className="mt-3 flex items-center gap-3 text-xs text-slate-500">
               {topic.lastReviewed ? (
-                <span>Repasado el {new Date(topic.lastReviewed).toLocaleDateString('es-AR')}</span>
+                <span>Repasado el {new Date(topic.lastReviewed).toLocaleDateString('es-CL')}</span>
               ) : (
-                <span>Sin repasar todavía</span>
+                <span>Sin repasar aún</span>
               )}
               <button onClick={() => markReviewed(topic)} className="text-violet-400 hover:underline">
                 Marcar como repasado

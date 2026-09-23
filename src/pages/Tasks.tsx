@@ -9,7 +9,7 @@ import type { HomeworkTask, NotebookEntry } from '../lib/types'
 const NO_CLASS = 'sin-clase'
 
 function formatClassDate(iso: string) {
-  return new Date(iso + 'T00:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'long' })
+  return new Date(iso + 'T00:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'long' })
 }
 
 // Una tarea agregada a mano se asigna a la clase de los últimos 6 días (la de esta semana);
@@ -114,7 +114,7 @@ export default function Tasks() {
   return (
     <div className="flex flex-col gap-6">
       <p className="text-sm text-slate-400">
-        Lo que te deja la profesora cada clase, ordenado por clase para ir tildando durante la semana.
+        Lo que te deja tu profe en cada clase, ordenado por clase, para ir marcándolo durante la semana.
       </p>
 
       <form onSubmit={addTask} className="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900 p-4">
@@ -143,7 +143,7 @@ export default function Tasks() {
 
       {pendingWithExercise.length > 0 && (
         <div className="rounded-2xl border border-violet-700/40 bg-violet-950/20 p-4 text-sm text-violet-200">
-          {pendingWithExercise.length} de tus tareas tienen un ejercicio automático listo — probalos en{' '}
+          {pendingWithExercise.length} de tus tareas tienen un ejercicio automático listo — pruébalos en{' '}
           <Link to="/practicar?tab=gramatica" className="underline">
             Practicar → Gramática
           </Link>
@@ -153,7 +153,7 @@ export default function Tasks() {
 
       {tasks.length === 0 && (
         <p className="rounded-2xl border border-slate-800 bg-slate-900 p-4 text-sm text-slate-400">
-          Todavía no tenés tareas. Se cargan solas cuando guardás las notas de una clase en el Cuaderno, o agregalas acá.
+          Aún no tienes tareas. Se cargan solitas cuando guardas las notas de una clase en el Cuaderno, o agrégalas acá.
         </p>
       )}
 

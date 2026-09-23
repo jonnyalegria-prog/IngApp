@@ -34,11 +34,11 @@ const memo = new Map<string, string>()
 async function invoke<T>(body: Record<string, unknown>): Promise<T> {
   const { data, error } = await supabase.functions.invoke('deepl', { body })
   if (error) {
-    let message = 'No se pudo traducir ahora. Probá de nuevo en un rato.'
+    let message = 'Pucha, no pude traducir ahora. Intenta de nuevo en un ratito.'
     let stage: string | undefined
     const res = (error as { context?: Response }).context
     if (res && typeof res.json === 'function') {
-      if (res.status === 401) message = 'Tu sesión venció. Volvé a iniciar sesión.'
+      if (res.status === 401) message = 'Tu sesión venció. Vuelve a iniciar sesión.'
       try {
         const payload = await res.json()
         if (payload?.error) {
@@ -99,5 +99,5 @@ export async function fetchVocabSuggestions(
 }
 
 export function errorMessage(err: unknown): string {
-  return err instanceof Error ? err.message : 'No se pudo traducir ahora. Probá de nuevo en un rato.'
+  return err instanceof Error ? err.message : 'Pucha, no pude traducir ahora. Intenta de nuevo en un ratito.'
 }

@@ -40,8 +40,8 @@ export default function DialoguePractice() {
   if (!active) {
     return (
       <div className="flex flex-col gap-3">
-        <p className="text-slate-400">Elegí un escenario para practicar un diálogo guiado.</p>
-        {dialogues.length === 0 && <p className="text-sm text-slate-500">Todavía no hay diálogos cargados.</p>}
+        <p className="text-slate-400">Elige un escenario para practicar un diálogo guiado.</p>
+        {dialogues.length === 0 && <p className="text-sm text-slate-500">Aún no hay diálogos cargados.</p>}
         {dialogues.map((d, i) => (
           <button
             key={i}
@@ -101,7 +101,7 @@ export default function DialoguePractice() {
       {finished && (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900 p-6 text-center">
           <div className="text-2xl">🎉</div>
-          <p className="text-white">¡Diálogo completo!</p>
+          <p className="text-white">¡Bacán, terminaste el diálogo!</p>
           <button onClick={exit} className="rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500">
             Elegir otro escenario
           </button>

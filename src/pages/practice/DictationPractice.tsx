@@ -30,7 +30,7 @@ export default function DictationPractice() {
   }
 
   if (sentences === null) return <p className="text-slate-400">Cargando...</p>
-  if (sentences.length === 0) return <p className="text-slate-400">Todavía no hay frases de dictado cargadas.</p>
+  if (sentences.length === 0) return <p className="text-slate-400">Aún no hay frases de dictado cargadas.</p>
 
   const current = sentences[currentIdx]
 
@@ -50,7 +50,7 @@ export default function DictationPractice() {
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <p className="text-sm text-slate-400">Escuchá la frase y escribí exactamente lo que oíste.</p>
+      <p className="text-sm text-slate-400">Escucha la frase y escribe exactamente lo que oíste.</p>
       <button onClick={playAudio} className="rounded-2xl border border-violet-600 bg-violet-950/30 px-6 py-4 text-2xl hover:bg-violet-950/50">
         🔊
       </button>
@@ -58,7 +58,7 @@ export default function DictationPractice() {
         value={input}
         onChange={(e) => setInput(e.target.value)}
         disabled={checked}
-        placeholder="Escribí lo que escuchaste..."
+        placeholder="Escribe lo que escuchaste..."
         className="w-full max-w-md rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white placeholder:text-slate-500 disabled:opacity-70"
       />
       {!checked ? (
@@ -75,7 +75,7 @@ export default function DictationPractice() {
       ) : (
         <div className="flex w-full max-w-md flex-col items-center gap-2">
           <p className={`text-sm font-medium ${isCorrect ? 'text-emerald-400' : 'text-red-400'}`}>
-            {isCorrect ? '¡Correcto! 🎉' : 'No coincide exactamente.'}
+            {isCorrect ? '¡Buena! 🎉' : 'Casi, pero no coincide exactamente.'}
           </p>
           {!isCorrect && <p className="text-sm text-slate-300">Frase correcta: "{current.text}"</p>}
           <TranslateLine text={current.text} />

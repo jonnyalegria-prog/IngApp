@@ -110,7 +110,7 @@ const RULES: Rule[] = [
     build: (m) => ({
       replacement: m[0].replace(/\s+me$/i, ' to me'),
       title: 'Es «explain to me»',
-      text: 'Con «explain» hace falta «to» antes de la persona: «Can you explain to me…?». También podés decir «tell me».',
+      text: 'Con «explain» hace falta «to» antes de la persona: «Can you explain to me…?». También puedes decir «tell me».',
     }),
   },
   {
@@ -201,7 +201,7 @@ function findPastMarkerMistakes(text: string): GrammarMatch[] {
         friendly: {
           title: 'Acá el verbo va en pasado',
           text:
-            `Con «${marker[0].toLowerCase()}» hablás del pasado, así que el verbo va en pasado: «${m[2]}» → «${past}». ` +
+            `Con «${marker[0].toLowerCase()}» hablas del pasado, así que el verbo va en pasado: «${m[2]}» → «${past}». ` +
             (regular
               ? 'Los verbos regulares terminan en -ed (played).'
               : 'Es un verbo irregular: hay que memorizar su forma de pasado.'),

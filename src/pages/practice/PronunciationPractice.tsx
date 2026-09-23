@@ -26,7 +26,7 @@ export default function PronunciationPractice() {
   if (!loaded) return <p className="text-slate-400">Cargando...</p>
 
   if (words.length === 0) {
-    return <p className="text-slate-400">Agregá vocabulario primero para poder practicar pronunciación.</p>
+    return <p className="text-slate-400">Agrega vocabulario primero para poder practicar pronunciación.</p>
   }
 
   const current = words[index % words.length]
@@ -49,7 +49,7 @@ export default function PronunciationPractice() {
       mediaRecorderRef.current = recorder
       setRecording(true)
     } catch {
-      setMicError('No pudimos acceder al micrófono. Revisá los permisos del navegador.')
+      setMicError('No pude acceder al micrófono. Revisa los permisos del navegador.')
     }
   }
 
@@ -66,7 +66,7 @@ export default function PronunciationPractice() {
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <p className="text-sm text-slate-400">Escuchá la referencia, grabate diciéndola, y compará.</p>
+      <p className="text-sm text-slate-400">Escucha la referencia, grábate diciéndola y compara.</p>
 
       <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 text-center">
         <div className="text-2xl font-semibold text-white">{current.term}</div>
@@ -91,7 +91,7 @@ export default function PronunciationPractice() {
             ⏹️
           </button>
         )}
-        <span className="text-xs text-slate-500">{recording ? 'Grabando... tocá para parar' : 'Tocá para grabarte'}</span>
+        <span className="text-xs text-slate-500">{recording ? 'Grabando... toca para parar' : 'Toca para grabarte'}</span>
       </div>
 
       {micError && <p className="text-sm text-red-400">{micError}</p>}

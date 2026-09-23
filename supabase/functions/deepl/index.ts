@@ -63,9 +63,9 @@ function getAdmin(): SupabaseClient {
 
 async function getUserId(admin: SupabaseClient, req: Request): Promise<string> {
   const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '')
-  if (!token) throw new HttpError(401, 'Iniciá sesión para traducir.', 'auth')
+  if (!token) throw new HttpError(401, 'Inicia sesión para traducir.', 'auth')
   const { data, error } = await admin.auth.getUser(token)
-  if (error || !data.user) throw new HttpError(401, 'Iniciá sesión para traducir.', 'auth')
+  if (error || !data.user) throw new HttpError(401, 'Inicia sesión para traducir.', 'auth')
   return data.user.id
 }
 
@@ -77,11 +77,35 @@ async function cacheKey(from: Lang, to: Lang, text: string, context: string): Pr
     .join('')
 }
 
+// DeepL entrega español latinoamericano genérico (ES-419); unas pocas palabras cambian en Chile.
+const CHILEAN_WORDS: Record<string, string> = {
+  computadora: 'computador',
+  computadoras: 'computadores',
+  fresa: 'frutilla',
+  fresas: 'frutillas',
+  melocotón: 'durazno',
+  melocotones: 'duraznos',
+  aguacate: 'palta',
+  aguacates: 'paltas',
+  frijol: 'poroto',
+  frijoles: 'porotos',
+}
+
+// Solo palabras sueltas: en una frase el género de los artículos y adjetivos ("la palta" / "el computador") se rompería.
+function chilenize(text: string): string {
+  if (/\s/.test(text.trim())) return text
+  return text.replace(/\p{L}+/gu, (word) => {
+    const swap = CHILEAN_WORDS[word.toLowerCase()]
+    if (!swap) return word
+    return word[0] === word[0].toUpperCase() ? swap[0].toUpperCase() + swap.slice(1) : swap
+  })
+}
+
 async function callDeepl(key: string, texts: string[], from: Lang, to: Lang, context?: string): Promise<string[]> {
   const body: Record<string, unknown> = {
     text: texts,
     source_lang: from.toUpperCase(),
-    target_lang: to === 'en' ? 'EN-US' : 'ES',
+    target_lang: to === 'en' ? 'EN-US' : 'ES-419',
   }
   if (context) body.context = context
   let res: Response
@@ -92,20 +116,20 @@ async function callDeepl(key: string, texts: string[], from: Lang, to: Lang, con
       body: JSON.stringify(body),
     })
   } catch {
-    throw new HttpError(502, 'No se pudo conectar con DeepL. Probá de nuevo.', 'deepl_network')
+    throw new HttpError(502, 'No pude conectarme con DeepL. Prueba de nuevo en un ratito.', 'deepl_network')
   }
   if (!res.ok) {
     if (res.status === 456) throw new HttpError(429, 'Se agotó el cupo mensual de DeepL.', 'deepl_quota')
-    if (res.status === 429) throw new HttpError(429, 'Demasiados pedidos seguidos. Probá en unos segundos.', 'deepl_rate')
+    if (res.status === 429) throw new HttpError(429, 'Demasiados pedidos seguidos. Prueba en unos segundos.', 'deepl_rate')
     if (res.status === 403) throw new HttpError(502, 'La clave de DeepL no es válida.', 'deepl_key')
-    throw new HttpError(502, 'DeepL no respondió bien. Probá de nuevo.', 'deepl_error')
+    throw new HttpError(502, 'DeepL no respondió bien. Prueba de nuevo en un ratito.', 'deepl_error')
   }
   const data = await res.json()
   const out = data?.translations?.map((t: { text: string }) => t.text)
   if (!Array.isArray(out) || out.length !== texts.length) {
     throw new HttpError(502, 'Respuesta inesperada de DeepL.', 'deepl_shape')
   }
-  return out
+  return to === 'es' ? out.map(chilenize) : out
 }
 
 async function translateItems(
@@ -150,7 +174,7 @@ async function translateItems(
     p_cap: MONTHLY_CAP_PER_USER,
   })
   if (reserveError) throw new HttpError(500, 'No se pudo verificar el cupo mensual.', 'quota_check')
-  if (!reserved) throw new HttpError(429, 'Llegaste al tope mensual de traducciones. Se renueva el mes que viene.', 'user_quota')
+  if (!reserved) throw new HttpError(429, 'Llegaste al tope mensual de traducciones. Se renueva el próximo mes.', 'user_quota')
 
   try {
     const plain = unique.filter((i) => !items[i].context)

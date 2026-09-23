@@ -40,7 +40,7 @@ export default function ReaderPractice() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-slate-400">Leé y tocá cualquier palabra para ver su significado.</p>
+        <p className="text-slate-400">Lee y toca cualquier palabra para ver su significado.</p>
         <select
           value={level}
           onChange={(e) => setLevel(e.target.value as EnglishLevel)}
@@ -54,7 +54,7 @@ export default function ReaderPractice() {
         </select>
       </div>
 
-      {visible.length === 0 && <p className="text-sm text-slate-500">Todavía no hay lecturas para este nivel.</p>}
+      {visible.length === 0 && <p className="text-sm text-slate-500">Aún no hay lecturas para este nivel.</p>}
       {visible.map((t) => (
         <button
           key={t.id}
@@ -69,7 +69,7 @@ export default function ReaderPractice() {
       <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
         <h2 className="mb-2 font-medium text-white">Leer un texto mío</h2>
         <p className="mb-2 text-xs text-slate-500">
-          Pegá un texto en inglés (un mensaje, un artículo corto). Solo se envían a DeepL las palabras que toques, con su
+          Pega un texto en inglés (un mensaje, un artículo corto). Solo se envían a DeepL las palabras que toques, con su
           oración como contexto.
         </p>
         <textarea
@@ -77,7 +77,7 @@ export default function ReaderPractice() {
           onChange={(e) => setPasted(e.target.value)}
           rows={4}
           maxLength={6000}
-          placeholder="Pegá acá tu texto en inglés..."
+          placeholder="Pega acá tu texto en inglés..."
           className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white placeholder:text-slate-500"
         />
         <button

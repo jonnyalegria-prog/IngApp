@@ -33,7 +33,7 @@ export default function VocabPractice() {
         <div className="text-3xl">🎉</div>
         <h1 className="text-xl font-semibold text-white">{finished ? '¡Repaso completo!' : 'No hay nada para repasar ahora'}</h1>
         <p className="text-slate-400">
-          {finished ? 'Volvé mañana para seguir con la racha.' : 'Agregá vocabulario nuevo o volvé más tarde.'}
+          {finished ? 'Vuelve mañana para seguir con la racha. ¡Vas bacán!' : 'Agrega vocabulario nuevo o vuelve más tarde.'}
         </p>
         <Link to="/vocabulario" className="mt-2 rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500">
           Ir a vocabulario
@@ -83,7 +83,7 @@ export default function VocabPractice() {
             {current.example && <div className="text-sm italic text-slate-400">"{current.example}"</div>}
           </div>
         ) : (
-          <p className="text-sm text-slate-500">Tocá para ver el significado</p>
+          <p className="text-sm text-slate-500">Toca para ver el significado</p>
         )}
       </div>
 
