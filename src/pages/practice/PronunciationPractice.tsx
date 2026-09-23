@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useVocabStore } from '../../store/useVocabStore'
 import { canSpeak, speak } from '../../lib/speech'
+import { markPracticed } from '../../lib/storage'
 
 export default function PronunciationPractice() {
   const { words, loaded, load } = useVocabStore()
@@ -55,6 +56,7 @@ export default function PronunciationPractice() {
   function stopRecording() {
     mediaRecorderRef.current?.stop()
     setRecording(false)
+    markPracticed()
   }
 
   function next() {

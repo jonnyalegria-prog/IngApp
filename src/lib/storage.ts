@@ -227,3 +227,22 @@ export async function registerPracticeToday(): Promise<AppSettings> {
   window.dispatchEvent(new Event(STREAK_UPDATED_EVENT))
   return updated
 }
+
+let practicedDay: string | null = null
+
+// Cualquier práctica cuenta para la racha (repaso, gramática, dictado, pronunciación,
+// conversación, lectura, escritura). Se llama en cada intento; solo el primero del día
+// llega a la base.
+export function markPracticed(): void {
+  const today = localDateString()
+  if (practicedDay === today) return
+  practicedDay = today
+  registerPracticeToday().catch(() => {
+    practicedDay = null
+  })
+}
+
+// Al cambiar de cuenta en el mismo navegador, el "ya practiqué hoy" no debe pasar de una a otra.
+export function resetPracticeMemo(): void {
+  practicedDay = null
+}

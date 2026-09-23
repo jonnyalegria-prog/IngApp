@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { canSpeak, speak } from '../../lib/speech'
 import { getDictationSentences } from '../../lib/exerciseBank'
+import { markPracticed } from '../../lib/storage'
 import TranslateLine from '../../components/TranslateLine'
 
 function normalize(text: string): string {
@@ -62,7 +63,10 @@ export default function DictationPractice() {
       />
       {!checked ? (
         <button
-          onClick={() => setChecked(true)}
+          onClick={() => {
+            setChecked(true)
+            markPracticed()
+          }}
           disabled={!input.trim()}
           className="rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500 disabled:opacity-40"
         >

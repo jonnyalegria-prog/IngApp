@@ -1,5 +1,6 @@
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
+import { resetPracticeMemo } from './storage'
 
 export async function getSession(): Promise<Session | null> {
   const { data } = await supabase.auth.getSession()
@@ -23,4 +24,5 @@ export async function signIn(email: string, password: string) {
 
 export async function signOut() {
   await supabase.auth.signOut()
+  resetPracticeMemo()
 }

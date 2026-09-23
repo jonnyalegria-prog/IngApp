@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import * as storage from '../../lib/storage'
+import { markPracticed } from '../../lib/storage'
 import { getGrammarExercises, type GrammarMcqContent } from '../../lib/exerciseBank'
 import { generateClozeSet, type ClozeExercise } from '../../lib/cloze'
 
@@ -102,7 +103,10 @@ function PersonalClozeSession({ exercises, onExit }: { exercises: ClozeExercise[
       />
       {!checked ? (
         <button
-          onClick={() => setChecked(true)}
+          onClick={() => {
+            setChecked(true)
+            markPracticed()
+          }}
           disabled={!input.trim()}
           className="rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500 disabled:opacity-40"
         >
@@ -160,6 +164,7 @@ function TopicMcqSession({ topic, onExit }: { topic: string; onExit: () => void 
   function choose(option: string) {
     if (selected) return
     setSelected(option)
+    markPracticed()
     if (option === current.answer) setScore((s) => s + 1)
   }
 

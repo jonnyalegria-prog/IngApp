@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { checkGrammar, type GrammarMatch } from '../../lib/languagetool'
 import { getWritingPrompts, type WritingPromptContent } from '../../lib/exerciseBank'
 import { errorMessage, translateOne } from '../../lib/translate'
+import { markPracticed } from '../../lib/storage'
 import TranslateLine from '../../components/TranslateLine'
 
 export default function WritingPractice() {
@@ -36,6 +37,7 @@ function FreeWriting() {
 
   async function handleCheck() {
     if (!text.trim()) return
+    markPracticed()
     setChecking(true)
     setError(null)
     try {
@@ -125,6 +127,7 @@ function GuidedWriting() {
 
   async function handleCheck() {
     if (!answer.trim()) return
+    markPracticed()
     setChecking(true)
     setResult(null)
     try {

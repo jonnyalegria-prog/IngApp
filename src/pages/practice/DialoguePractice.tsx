@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { canSpeak, speak } from '../../lib/speech'
 import { getDialogues, type DialogueContent } from '../../lib/exerciseBank'
+import { markPracticed } from '../../lib/storage'
 import TranslateLine from '../../components/TranslateLine'
 
 export default function DialoguePractice() {
@@ -24,6 +25,7 @@ export default function DialoguePractice() {
     if (!active) return
     const nextNode = active.nodes.find((n) => n.id === next)
     if (!nextNode) return
+    markPracticed()
     setHistory((h) => [...h, { speaker: 'you', text: label }, { speaker: nextNode.speaker, text: nextNode.text }])
     setNodeId(next)
   }

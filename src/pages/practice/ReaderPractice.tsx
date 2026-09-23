@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getReadingTexts, type ReadingText } from '../../lib/exerciseBank'
 import * as storage from '../../lib/storage'
+import { markPracticed } from '../../lib/storage'
 import { canSpeak, speak } from '../../lib/speech'
 import { errorMessage, translateOne } from '../../lib/translate'
 import { useVocabStore } from '../../store/useVocabStore'
@@ -122,6 +123,7 @@ function Reader({ text, onBack }: { text: OpenText; onBack: () => void }) {
 
   async function pick(word: string, sentence: string, at: string) {
     if (!word) return
+    markPracticed()
     setSelection({ word, sentence, at })
     setTranslation(null)
     setError(null)

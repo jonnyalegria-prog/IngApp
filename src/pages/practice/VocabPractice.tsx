@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useVocabStore } from '../../store/useVocabStore'
 import { canSpeak, speak } from '../../lib/speech'
-import { registerPracticeToday } from '../../lib/storage'
+import { markPracticed } from '../../lib/storage'
 
 export default function VocabPractice() {
   const { words, loaded, load, review, dueWords } = useVocabStore()
@@ -45,10 +45,10 @@ export default function VocabPractice() {
   async function answer(quality: 1 | 3 | 5) {
     if (!current || !queue) return
     await review(current.id, quality)
+    markPracticed()
     const rest = queue.slice(1)
     setFlipped(false)
     if (rest.length === 0) {
-      await registerPracticeToday()
       setFinished(true)
     } else {
       setQueue(rest)
