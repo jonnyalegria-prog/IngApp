@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { canSpeak, speak } from '../../lib/speech'
 import { getDictationSentences } from '../../lib/exerciseBank'
+import TranslateLine from '../../components/TranslateLine'
 
 function normalize(text: string): string {
   return text
@@ -73,6 +74,7 @@ export default function DictationPractice() {
             {isCorrect ? '¡Correcto! 🎉' : 'No coincide exactamente.'}
           </p>
           {!isCorrect && <p className="text-sm text-slate-300">Frase correcta: "{current.text}"</p>}
+          <TranslateLine text={current.text} />
           <button onClick={next} className="rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
             Siguiente frase
           </button>

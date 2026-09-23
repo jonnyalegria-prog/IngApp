@@ -180,11 +180,11 @@ export async function getSettings(): Promise<AppSettings> {
   const userId = await currentUserId()
   const { data, error } = await supabase.from('user_settings').select('*').eq('user_id', userId).maybeSingle()
   if (error) throw error
-  if (!data) return { streak: 0, level: 'intermedio' }
+  if (!data) return { streak: 0, level: 'principiante' }
   return {
     streak: data.streak,
     lastPracticeDate: data.last_practice_date ?? undefined,
-    level: (data.level ?? 'intermedio') as EnglishLevel,
+    level: (data.level ?? 'principiante') as EnglishLevel,
   }
 }
 

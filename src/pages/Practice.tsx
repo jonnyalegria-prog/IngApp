@@ -5,12 +5,14 @@ import GrammarPractice from './practice/GrammarPractice'
 import DictationPractice from './practice/DictationPractice'
 import PronunciationPractice from './practice/PronunciationPractice'
 import DialoguePractice from './practice/DialoguePractice'
+import ReaderPractice from './practice/ReaderPractice'
 
-type Tab = 'vocabulario' | 'gramatica' | 'dictado' | 'pronunciacion' | 'conversacion'
+type Tab = 'vocabulario' | 'gramatica' | 'lectura' | 'dictado' | 'pronunciacion' | 'conversacion'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'vocabulario', label: 'Vocabulario' },
   { id: 'gramatica', label: 'Gramática' },
+  { id: 'lectura', label: 'Lectura' },
   { id: 'dictado', label: 'Dictado' },
   { id: 'pronunciacion', label: 'Pronunciación' },
   { id: 'conversacion', label: 'Conversación' },
@@ -39,6 +41,7 @@ export default function Practice() {
 
       {tab === 'vocabulario' && <VocabPractice />}
       {tab === 'gramatica' && <GrammarPractice />}
+      {tab === 'lectura' && <ReaderPractice />}
       {tab === 'dictado' && <DictationPractice />}
       {tab === 'pronunciacion' && <PronunciationPractice />}
       {tab === 'conversacion' && <DialoguePractice />}

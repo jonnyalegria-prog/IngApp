@@ -11,7 +11,7 @@ const LEVEL_LABELS: Record<EnglishLevel, string> = {
 }
 
 export default function Discovery() {
-  const [settings, setSettings] = useState<AppSettings>({ streak: 0, level: 'intermedio' })
+  const [settings, setSettings] = useState<AppSettings>({ streak: 0, level: 'principiante' })
   const [picks, setPicks] = useState<DiscoveryPick[]>([])
   const [ownText, setOwnText] = useState('')
 

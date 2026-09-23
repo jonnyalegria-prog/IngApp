@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { canSpeak, speak } from '../../lib/speech'
 import { getDialogues, type DialogueContent } from '../../lib/exerciseBank'
+import TranslateLine from '../../components/TranslateLine'
 
 export default function DialoguePractice() {
   const [dialogues, setDialogues] = useState<DialogueContent[] | null>(null)
@@ -63,18 +64,21 @@ export default function DialoguePractice() {
         {history.map((line, i) => (
           <div
             key={i}
-            className={`flex items-center gap-2 rounded-2xl border p-3 text-sm ${
+            className={`rounded-2xl border p-3 text-sm ${
               line.speaker === 'you'
                 ? 'ml-8 border-violet-600 bg-violet-950/30 text-white'
                 : 'mr-8 border-slate-800 bg-slate-900 text-slate-200'
             }`}
           >
-            {line.speaker === 'npc' && canSpeak() && (
-              <button onClick={() => speak(line.text)} className="shrink-0 text-slate-500 hover:text-violet-400">
-                🔊
-              </button>
-            )}
-            <span>{line.text}</span>
+            <div className="flex items-center gap-2">
+              {line.speaker === 'npc' && canSpeak() && (
+                <button onClick={() => speak(line.text)} className="shrink-0 text-slate-500 hover:text-violet-400">
+                  🔊
+                </button>
+              )}
+              <span>{line.text}</span>
+            </div>
+            <TranslateLine text={line.text} />
           </div>
         ))}
       </div>
@@ -82,13 +86,12 @@ export default function DialoguePractice() {
       {!finished && currentNode && (
         <div className="flex flex-col gap-2">
           {currentNode.options.map((opt) => (
-            <button
-              key={opt.next}
-              onClick={() => choose(opt.next, opt.label)}
-              className="rounded-md border border-slate-700 bg-slate-900 p-3 text-left text-sm text-white hover:border-violet-500"
-            >
-              {opt.label}
-            </button>
+            <div key={opt.next} className="rounded-md border border-slate-700 bg-slate-900 p-3">
+              <button onClick={() => choose(opt.next, opt.label)} className="w-full text-left text-sm text-white hover:text-violet-300">
+                {opt.label}
+              </button>
+              <TranslateLine text={opt.label} />
+            </div>
           ))}
         </div>
       )}

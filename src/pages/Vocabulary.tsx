@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { useVocabStore } from '../store/useVocabStore'
 import { speak, canSpeak } from '../lib/speech'
 import { isDue } from '../lib/srs'
+import { errorMessage, translateOne } from '../lib/translate'
+import VocabSuggestions from '../components/VocabSuggestions'
 import type { Word } from '../lib/types'
 
 export default function Vocabulary() {
@@ -25,9 +27,17 @@ export default function Vocabulary() {
         </p>
       </div>
       <AddWordForm onAdd={addWord} />
+      <VocabSuggestions existingTerms={words.map((w) => w.term)} onAdd={addWord} />
       <WordList words={words} onRemove={removeWord} />
     </div>
   )
+}
+
+// DeepL capitaliza como si fuera una oración; para palabras sueltas se respeta la mayúscula del original.
+function matchCase(source: string, result: string): string {
+  const isSentence = /[.!?]$/.test(result) || result.trim().split(/\s+/).length > 4
+  if (isSentence || source.charAt(0) !== source.charAt(0).toLowerCase()) return result
+  return result.charAt(0).toLowerCase() + result.slice(1)
 }
 
 function AddWordForm({
@@ -38,6 +48,36 @@ function AddWordForm({
   const [term, setTerm] = useState('')
   const [translation, setTranslation] = useState('')
   const [example, setExample] = useState('')
+  const [translating, setTranslating] = useState(false)
+  const [translateError, setTranslateError] = useState<string | null>(null)
+
+  // Con uno solo de los dos campos completo, DeepL completa el otro (el ejemplo sirve de contexto).
+  const canTranslate = !translating && Boolean(term.trim()) !== Boolean(translation.trim())
+
+  async function handleTranslate() {
+    setTranslating(true)
+    setTranslateError(null)
+    try {
+      if (term.trim()) {
+        const text = term.trim()
+        const result = await translateOne(text, {
+          from: 'en',
+          to: 'es',
+          context: example.trim() || undefined,
+          cache: text.length <= 60,
+        })
+        setTranslation(matchCase(text, result))
+      } else {
+        const text = translation.trim()
+        const result = await translateOne(text, { from: 'es', to: 'en', cache: text.length <= 60 })
+        setTerm(matchCase(text, result))
+      }
+    } catch (err) {
+      setTranslateError(errorMessage(err))
+    } finally {
+      setTranslating(false)
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -46,6 +86,7 @@ function AddWordForm({
     setTerm('')
     setTranslation('')
     setExample('')
+    setTranslateError(null)
   }
 
   return (
@@ -71,12 +112,24 @@ function AddWordForm({
         placeholder="Ejemplo de uso (opcional)"
         className="mt-3 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white placeholder:text-slate-500"
       />
-      <button
-        type="submit"
-        className="mt-3 rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500"
-      >
-        Agregar
-      </button>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <button
+          type="submit"
+          className="rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500"
+        >
+          Agregar
+        </button>
+        <button
+          type="button"
+          onClick={handleTranslate}
+          disabled={!canTranslate}
+          className="rounded-md bg-slate-800 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700 disabled:opacity-40"
+        >
+          {translating ? 'Traduciendo...' : '🌐 Traducir'}
+        </button>
+        <span className="text-xs text-slate-500">Completá un campo y traduzco el otro.</span>
+      </div>
+      {translateError && <p className="mt-2 text-sm text-red-400">{translateError}</p>}
     </form>
   )
 }
