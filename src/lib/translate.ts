@@ -98,6 +98,13 @@ export async function fetchVocabSuggestions(
   return invoke({ action: 'suggest', level, count, exclude })
 }
 
+// DeepL capitaliza como si fuera una oración; para palabras sueltas se respeta la mayúscula del original.
+export function matchCase(source: string, result: string): string {
+  const isSentence = /[.!?]$/.test(result) || result.trim().split(/\s+/).length > 4
+  if (isSentence || source.charAt(0) !== source.charAt(0).toLowerCase()) return result
+  return result.charAt(0).toLowerCase() + result.slice(1)
+}
+
 export function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : 'Pucha, no pude traducir ahora. Intenta de nuevo en un ratito.'
 }

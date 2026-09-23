@@ -13,7 +13,6 @@ export interface ParseResult {
 
 // Turns pasted class notes into candidate vocabulary entries, homework-style
 // tasks, and leftover grammar notes — zero AI calls, just heuristics.
-const SEPARATOR = /\s*[-–—:=]\s*/
 const MAX_VOCAB_LINE_LENGTH = 70
 const MAX_TERM_WORDS = 4
 const MAX_TRANSLATION_WORDS = 6
@@ -22,6 +21,8 @@ const TASK_KEYWORDS = /\b(practicar|aprender|estudiar|buscar|investigar|repasar|
 // "ver" only counts as a task when it LEADS the line (e.g. "Ver tal video").
 // Mid-sentence it's usually just the verb "to see" inside a grammar example.
 const TASK_LEADING_VER = /^ver\b/i
+// "Tarea: escribir 5 frases" / "Deberes - repasar to be": la etiqueta ya dice que es una tarea.
+const TASK_LABEL = /^(?:tareas?|deberes|homework)\s*[:\-–—]\s*/i
 
 function isTaskLine(line: string): boolean {
   return TASK_KEYWORDS.test(line) || TASK_LEADING_VER.test(line)
@@ -117,48 +118,181 @@ export function extractClassDate(raw: string, today = localDateString()): string
   return null
 }
 
-export function parseNotes(raw: string): ParseResult {
-  const vocab: ParsedEntry[] = []
-  const tasks: string[] = []
-  const grammar: string[] = []
+// --- Clasificación línea por línea ------------------------------------------
+export type NoteKind = 'vocab' | 'task' | 'grammar'
 
-  // La línea de la fecha se descarta antes de limpiar viñetas, que también borran números iniciales ("13 de septiembre").
-  const lines = raw
-    .split('\n')
-    .filter((line) => !isClassDateLine(line))
-    .map((line) => line.replace(/^[\s*•\d.)-]+/, '').trim())
-    .filter(Boolean)
+export interface ClassifiedLine {
+  kind: NoteKind
+  /** La línea tal como venía en tus apuntes (sin viñeta). */
+  text: string
+  /** Solo vocabulario: la palabra en inglés y su significado en español ('' si falta). */
+  term?: string
+  meaning?: string
+  /** Se dio vuelta sola porque el inglés venía a la derecha. */
+  swapped?: boolean
+}
 
-  for (const line of lines) {
-    if (line.length <= MAX_VOCAB_LINE_LENGTH) {
-      const parenMatch = line.match(/^(.*?)\s*\(([^)]+)\)\s*$/)
-      if (
-        parenMatch &&
-        wordCount(parenMatch[1]) <= MAX_TERM_WORDS &&
-        wordCount(parenMatch[2]) <= MAX_TRANSLATION_WORDS
-      ) {
-        vocab.push({ term: parenMatch[1].trim(), translation: parenMatch[2].trim() })
-        continue
-      }
+// Etiquetas y títulos de apuntes ("Ejemplo: ...", "Regla: ...", "Vocabulario"): no son vocabulario.
+const LABELS = new Set([
+  'ejemplo', 'ejemplos', 'ej', 'regla', 'reglas', 'tip', 'tips', 'nota', 'notas', 'ojo', 'importante', 'recuerda',
+  'recordar', 'uso', 'usos', 'estructura', 'forma', 'formas', 'pregunta', 'preguntas', 'negativo', 'afirmativo',
+  'interrogativo', 'traducción', 'traduccion', 'significado', 'tema', 'temas', 'clase', 'vocabulario', 'gramática',
+  'gramatica', 'verbos', 'ejercicio', 'ejercicios', 'repaso', 'resumen',
+])
 
-      const parts = line.split(SEPARATOR).filter(Boolean)
-      if (
-        parts.length >= 2 &&
-        wordCount(parts[0]) <= MAX_TERM_WORDS &&
-        wordCount(parts.slice(1).join(' ')) <= MAX_TRANSLATION_WORDS
-      ) {
-        vocab.push({ term: parts[0].trim(), translation: parts.slice(1).join(' ').trim() })
-        continue
-      }
-    }
+// Palabras muy comunes que delatan el idioma. Se dejan afuera las que existen en los dos (a, no, me, son, sin...).
+const ES_STOPWORDS = new Set([
+  'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas', 'del', 'al', 'que', 'se', 'es', 'está', 'están', 'por', 'para',
+  'y', 'o', 'muy', 'como', 'mi', 'tu', 'su', 'mis', 'tus', 'sus', 'más', 'pero', 'cuando', 'donde', 'porque', 'esto',
+  'esta', 'este', 'eso', 'ese', 'hay', 'ser', 'estar', 'tiene', 'tienen', 'usa', 'usan', 'sirve', 'entre', 'sobre',
+  'también', 'todo', 'todos', 'cada', 'hace', 'hacer', 'lo', 'le', 'les', 'nos', 'qué', 'cómo', 'de', 'en',
+])
+const EN_STOPWORDS = new Set([
+  'the', 'an', 'of', 'to', 'is', 'are', 'was', 'were', 'be', 'been', 'and', 'or', 'in', 'on', 'at', 'for', 'with', 'my',
+  'your', 'his', 'her', 'our', 'their', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'this', 'that', 'these', 'those',
+  'do', 'does', 'did', 'have', 'has', 'had', 'will', 'would', 'can', 'could', 'should', 'not', "don't", "doesn't",
+  "didn't", 'very', 'from', 'by', 'about', 'if', 'when', 'where', 'what', 'how', 'why', 'who', 'there', 'here', 'some',
+  'any',
+])
+// Títulos de temas de gramática que, solos en una línea, no son una palabra para aprender.
+const GRAMMAR_WORDS = new Set([
+  'present', 'past', 'future', 'simple', 'perfect', 'continuous', 'conditional', 'passive', 'verb', 'verbs', 'noun',
+  'adjective', 'adverb', 'tense', 'tenses', 'grammar', 'vocabulary', 'unit', 'lesson', 'homework', 'test', 'exam',
+])
 
-    if (isTaskLine(line)) {
-      tasks.push(line)
-      continue
-    }
+const HAS_LETTER = /[a-záéíóúüñ]/i
 
-    grammar.push(line)
+function wordsOf(text: string): string[] {
+  return text.toLowerCase().match(/[a-záéíóúüñ']+/g) ?? []
+}
+
+/** Positivo: suena a español. Negativo: suena a inglés. 0: no hay pistas claras. */
+export function spanishScore(text: string): number {
+  let score = /^\s*to\s+[a-z]/i.test(text) ? -3 : 0
+  for (const w of wordsOf(text)) {
+    if (/[áéíóúüñ]/.test(w)) score += 3
+    if (ES_STOPWORDS.has(w)) score += 2
+    if (EN_STOPWORDS.has(w)) score -= 2
+    if (w.length >= 5 && /(ción|sión|dad|mente)$/.test(w)) score += 2
+    if (w.length >= 6 && /(arse|erse|irse)$/.test(w)) score += 3
+    if (w.length >= 5 && /(ar|ir)$/.test(w)) score += 1
+    if (w.length >= 5 && /(ing|ly|ness|ful|less|ment|tion|able|ible)$/.test(w)) score -= 2
+    if (/[kw]/.test(w)) score -= 1
+    if (/th|sh|ck|wh|ough/.test(w)) score -= 1
   }
+  return score
+}
 
-  return { vocab, tasks, grammar }
+// Una oración con artículos y conectores es una explicación, no la traducción de una palabra.
+function looksLikeSentence(text: string): boolean {
+  const ws = wordsOf(text)
+  return ws.length >= 4 && ws.filter((w) => ES_STOPWORDS.has(w) || EN_STOPWORDS.has(w)).length >= 2
+}
+
+function isLabel(text: string): boolean {
+  return LABELS.has(text.toLowerCase().replace(/[:.\s]+$/, ''))
+}
+
+function capitalize(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}
+
+// Separadores de "palabra - significado". El guion solo separa si tiene espacios alrededor:
+// así "mother-in-law - suegra" y "e-mail: correo" no se cortan por la mitad. Los dos puntos
+// tampoco separan una hora ("5:30").
+const PAIR_SEPARATOR = /\s+[-–—=]\s+|\s*(?:→|->|=>)\s*|\s*:\s+|\s*=\s*/
+
+function splitPair(line: string): { left: string; right: string } | null {
+  const paren = line.match(/^(.*?)\s*\(([^)]+)\)\s*$/)
+  if (paren && paren[1].trim()) return { left: paren[1].trim(), right: paren[2].trim() }
+  const m = PAIR_SEPARATOR.exec(line)
+  if (!m || m.index === 0) return null
+  const left = line.slice(0, m.index).trim()
+  const right = line.slice(m.index + m[0].length).trim()
+  return left && right ? { left, right } : null
+}
+
+// El inglés va primero. Si la izquierda suena claramente más a español que la derecha, se da vuelta.
+function orient(left: string, right: string): { term: string; meaning: string; swapped: boolean } {
+  return spanishScore(left) - spanishScore(right) >= 2
+    ? { term: right, meaning: left, swapped: true }
+    : { term: left, meaning: right, swapped: false }
+}
+
+/** Para pasar una línea a vocabulario a mano: separa y ordena "palabra - significado". */
+export function pairFromLine(line: string): { term: string; meaning: string; swapped: boolean } | null {
+  const pair = splitPair(line)
+  return pair ? orient(pair.left, pair.right) : null
+}
+
+function toVocab(line: string): ClassifiedLine | null {
+  if (line.length > MAX_VOCAB_LINE_LENGTH) return null
+  const pair = splitPair(line)
+  if (!pair) return null
+  // "Ejemplo: I go to school", "Regla: usa did": una etiqueta seguida de una explicación.
+  if (isLabel(pair.left) && (wordCount(pair.right) >= 2 || spanishScore(pair.right) >= 1)) return null
+
+  const { term, meaning, swapped } = orient(pair.left, pair.right)
+  if (wordCount(term) > MAX_TERM_WORDS || wordCount(meaning) > MAX_TRANSLATION_WORDS) return null
+  if (!HAS_LETTER.test(term) || !HAS_LETTER.test(meaning)) return null
+  if (looksLikeSentence(term) || looksLikeSentence(meaning)) return null
+  const termScore = spanishScore(term)
+  const meaningScore = spanishScore(meaning)
+  if (termScore <= -2 && meaningScore <= -2) return null // los dos lados suenan a inglés: no es una traducción
+  if (termScore >= 1 && meaningScore >= 1) return null // los dos lados suenan a español: tampoco
+  return { kind: 'vocab', text: line, term, meaning, swapped }
+}
+
+// Una palabra en inglés sola en su línea ("run", "to give up"): vocabulario a la espera de su significado.
+function toLoneWord(line: string): ClassifiedLine | null {
+  if (line.length > 30 || !/^[A-Za-z][A-Za-z' -]*$/.test(line)) return null
+  const ws = line.split(/\s+/)
+  if (ws.length > 3 || isLabel(line) || spanishScore(line) >= 1) return null
+  if (ws.some((w) => GRAMMAR_WORDS.has(w.toLowerCase()))) return null
+  const single = ws.length === 1
+  const infinitive = /^to\s+[a-z]/i.test(line)
+  const allLowercase = line === line.toLowerCase()
+  // "Present perfect" (con mayúscula) parece el título de un tema; "give up" o "to give up", una expresión.
+  if (!single && !infinitive && !allLowercase) return null
+  return { kind: 'vocab', text: line, term: line, meaning: '' }
+}
+
+function stripBullet(line: string): string {
+  let out = line.trim()
+  // Solo viñetas y numeración de lista ("* ", "- ", "1. ", "2) "): así "2nd - segundo" y "-ed" quedan intactos.
+  for (let i = 0; i < 2; i++) {
+    out = out.replace(/^(?:[*•·]+|[-–—]+(?=\s)|\d{1,2}[.)](?=\s))\s*/, '').trim()
+  }
+  return out
+}
+
+function classifyLine(line: string): ClassifiedLine {
+  const label = line.match(TASK_LABEL)
+  if (label && line.length > label[0].length) return { kind: 'task', text: capitalize(line.slice(label[0].length).trim()) }
+  const vocab = toVocab(line)
+  if (vocab) return vocab
+  if (isTaskLine(line)) return { kind: 'task', text: line }
+  return toLoneWord(line) ?? { kind: 'grammar', text: line }
+}
+
+/** Separa tus apuntes en vocabulario, tareas y gramática, una línea a la vez. */
+export function classifyNotes(raw: string): ClassifiedLine[] {
+  const out: ClassifiedLine[] = []
+  for (const original of raw.split('\n')) {
+    // La línea de la fecha se descarta antes de limpiar viñetas, que también borran números iniciales.
+    if (isClassDateLine(original)) continue
+    const line = stripBullet(original)
+    if (line) out.push(classifyLine(line))
+  }
+  return out
+}
+
+/** Versión agrupada: solo el vocabulario que ya tiene significado. */
+export function parseNotes(raw: string): ParseResult {
+  const lines = classifyNotes(raw)
+  return {
+    vocab: lines.flatMap((l) => (l.kind === 'vocab' && l.term && l.meaning ? [{ term: l.term, translation: l.meaning }] : [])),
+    tasks: lines.filter((l) => l.kind === 'task').map((l) => l.text),
+    grammar: lines.filter((l) => l.kind === 'grammar').map((l) => l.text),
+  }
 }

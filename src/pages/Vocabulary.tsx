@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useVocabStore } from '../store/useVocabStore'
 import { speak, canSpeak } from '../lib/speech'
 import { isDue } from '../lib/srs'
-import { errorMessage, translateOne } from '../lib/translate'
+import { errorMessage, matchCase, translateOne } from '../lib/translate'
 import VocabSuggestions from '../components/VocabSuggestions'
 import type { Word } from '../lib/types'
 
@@ -31,13 +31,6 @@ export default function Vocabulary() {
       <WordList words={words} onRemove={removeWord} />
     </div>
   )
-}
-
-// DeepL capitaliza como si fuera una oración; para palabras sueltas se respeta la mayúscula del original.
-function matchCase(source: string, result: string): string {
-  const isSentence = /[.!?]$/.test(result) || result.trim().split(/\s+/).length > 4
-  if (isSentence || source.charAt(0) !== source.charAt(0).toLowerCase()) return result
-  return result.charAt(0).toLowerCase() + result.slice(1)
 }
 
 function AddWordForm({
