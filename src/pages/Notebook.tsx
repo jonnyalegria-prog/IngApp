@@ -192,7 +192,8 @@ export default function Notebook() {
             ¡Listo! Guardé {lastResult.vocabCount} palabra(s)
             {lastResult.taskCount > 0 && `, ${lastResult.taskCount} tarea(s)`}
             {lastResult.grammarSaved ? ' y las notas de gramática.' : '.'}
-            {lastResult.withoutMeaning > 0 && ` (${lastResult.withoutMeaning} sin significado no se guardaron)`}
+            {lastResult.withoutMeaning > 0 &&
+              ` (${lastResult.withoutMeaning} sin significado no se ${lastResult.withoutMeaning === 1 ? 'guardó' : 'guardaron'})`}
           </p>
         )}
       </form>

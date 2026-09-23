@@ -71,7 +71,7 @@ export default function NotesReview({ lines, dateLabel, saving, onBack, onSave }
   }
 
   function swap(it: ReviewItem) {
-    update(it.id, { term: it.meaning, meaning: it.term, swapped: !it.swapped, sameWord: false })
+    update(it.id, { term: it.meaning, meaning: it.term, swapped: false, sameWord: false })
   }
 
   const missing = items.filter((it) => it.kind === 'vocab' && it.term.trim() && !it.meaning.trim())
@@ -136,7 +136,7 @@ export default function NotesReview({ lines, dateLabel, saving, onBack, onSave }
                   disabled={translating}
                   className="rounded-md bg-slate-800 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-700 disabled:opacity-50"
                 >
-                  {translating ? 'Traduciendo...' : `🌐 Traducir las ${missing.length} que faltan`}
+                  {translating ? 'Traduciendo...' : missing.length === 1 ? '🌐 Traducir la que falta' : `🌐 Traducir las ${missing.length} que faltan`}
                 </button>
               )}
             </div>
