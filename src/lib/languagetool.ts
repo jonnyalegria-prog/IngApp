@@ -4,6 +4,11 @@ export interface GrammarMatch {
   offset: number
   length: number
   suggestions: string[]
+  /** Regla de LanguageTool (p. ej. UPPERCASE_SENTENCE_START) o una propia (ES_*). */
+  ruleId: string
+  categoryId: string
+  /** Explicación ya escrita en español; las reglas propias la traen, las de LanguageTool se arman aparte. */
+  friendly?: { title: string; text: string }
 }
 
 // Free public LanguageTool API — no API key required.
@@ -27,5 +32,7 @@ export async function checkGrammar(text: string): Promise<GrammarMatch[]> {
     offset: m.offset,
     length: m.length,
     suggestions: (m.replacements ?? []).slice(0, 3).map((r: any) => r.value),
+    ruleId: m.rule?.id ?? '',
+    categoryId: m.rule?.category?.id ?? '',
   }))
 }

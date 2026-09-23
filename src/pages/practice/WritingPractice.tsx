@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { checkGrammar, type GrammarMatch } from '../../lib/languagetool'
+import { reviewText, type ReviewResult } from '../../lib/grammarFeedback'
 import { getWritingPrompts, type WritingPromptContent } from '../../lib/exerciseBank'
 import { errorMessage, translateOne } from '../../lib/translate'
 import { markPracticed } from '../../lib/storage'
 import TranslateLine from '../../components/TranslateLine'
+import GrammarFeedback from '../../components/GrammarFeedback'
 
 export default function WritingPractice() {
   const [mode, setMode] = useState<'libre' | 'guiado'>('libre')
@@ -31,19 +32,15 @@ export default function WritingPractice() {
 
 function FreeWriting() {
   const [text, setText] = useState('')
-  const [matches, setMatches] = useState<GrammarMatch[] | null>(null)
+  const [review, setReview] = useState<ReviewResult | null>(null)
   const [checking, setChecking] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   async function handleCheck() {
     if (!text.trim()) return
     markPracticed()
     setChecking(true)
-    setError(null)
     try {
-      setMatches(await checkGrammar(text))
-    } catch {
-      setError('No se pudo conectar con el corrector. Probá de nuevo en un momento.')
+      setReview(await reviewText(text))
     } finally {
       setChecking(false)
     }
@@ -53,8 +50,13 @@ function FreeWriting() {
     <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
       <textarea
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => {
+          setText(e.target.value)
+          setReview(null)
+        }}
         rows={6}
+        lang="en"
+        translate="no"
         placeholder="Today I learned that..."
         className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white placeholder:text-slate-500"
       />
@@ -65,30 +67,7 @@ function FreeWriting() {
       >
         {checking ? 'Revisando...' : 'Revisar gramática'}
       </button>
-      {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
-      {matches && <GrammarMatches matches={matches} />}
-    </div>
-  )
-}
-
-function GrammarMatches({ matches }: { matches: GrammarMatch[] }) {
-  return (
-    <div className="mt-4 flex flex-col gap-2">
-      {matches.length === 0 ? (
-        <p className="text-sm text-emerald-400">¡Sin errores de gramática detectados! 🎉</p>
-      ) : (
-        matches.map((m, idx) => (
-          <div key={idx} className="rounded-md border border-amber-700/40 bg-amber-950/30 p-3 text-sm">
-            <p className="text-amber-300">{m.shortMessage}</p>
-            <p className="text-slate-400">{m.message}</p>
-            {m.suggestions.length > 0 && (
-              <p className="mt-1 text-slate-300">
-                Sugerencias: <span className="text-white">{m.suggestions.join(', ')}</span>
-              </p>
-            )}
-          </div>
-        ))
-      )}
+      {review && <GrammarFeedback items={review.items} partial={review.checkerOffline} />}
     </div>
   )
 }
@@ -98,7 +77,7 @@ function normalize(text: string): string {
 }
 
 interface GuidedResult {
-  matches: GrammarMatch[] | null
+  review: ReviewResult | null
   backTranslation?: string
   backError?: string
   reference?: string
@@ -132,19 +111,19 @@ function GuidedWriting() {
     setResult(null)
     try {
       if (isCloze) {
-        setResult({ matches: null, correct: normalize(answer) === normalize(current.example ?? '') })
+        setResult({ review: null, correct: normalize(answer) === normalize(current.example ?? '') })
         return
       }
       // Gramática (LanguageTool) + "retro-traducción": DeepL vuelve tu frase al español
       // para que compares si dice lo que querías decir.
       // En las consignas "Traducí" también se trae la traducción de referencia de DeepL (ya cacheada).
       const [grammar, back, reference] = await Promise.allSettled([
-        checkGrammar(answer),
+        reviewText(answer),
         translateOne(answer.trim(), { from: 'en', to: 'es' }),
         sourceSentence ? translateOne(sourceSentence, { from: 'es', to: 'en', cache: true }) : Promise.resolve(undefined),
       ])
       setResult({
-        matches: grammar.status === 'fulfilled' ? grammar.value : null,
+        review: grammar.status === 'fulfilled' ? grammar.value : null,
         backTranslation: back.status === 'fulfilled' ? back.value : undefined,
         backError: back.status === 'rejected' ? errorMessage(back.reason) : undefined,
         reference: reference.status === 'fulfilled' ? reference.value : undefined,
@@ -172,6 +151,8 @@ function GuidedWriting() {
         }}
         rows={3}
         maxLength={1000}
+        lang="en"
+        translate="no"
         placeholder="Escribí tu respuesta..."
         className="mt-3 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white placeholder:text-slate-500"
       />
@@ -201,10 +182,7 @@ function GuidedWriting() {
           {result.correct ? '¡Correcto! 🎉' : `No coincide. Respuesta esperada: "${current.example}"`}
         </p>
       )}
-      {result?.matches && <GrammarMatches matches={result.matches} />}
-      {result && !isCloze && result.matches === null && (
-        <p className="mt-3 text-sm text-amber-400">No se pudo conectar con el corrector de gramática.</p>
-      )}
+      {result?.review && <GrammarFeedback items={result.review.items} partial={result.review.checkerOffline} />}
       {result?.reference && (
         <div className="mt-3 rounded-md border border-emerald-700/40 bg-emerald-950/30 p-3 text-sm">
           <p className="text-slate-400">Así lo traduce DeepL:</p>
