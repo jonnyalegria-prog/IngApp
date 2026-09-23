@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import Notebook from './Notebook'
 import Tasks from './Tasks'
@@ -15,13 +14,13 @@ const TABS: { id: Tab; label: string }[] = [
 ]
 
 export default function MyClass() {
+  // La pestaña sale de la dirección (?tab=), así el botón atrás y los enlaces internos la cambian de verdad.
   const [searchParams, setSearchParams] = useSearchParams()
-  const fromUrl = searchParams.get('tab') as Tab | null
-  const [tab, setTab] = useState<Tab>(TABS.some((t) => t.id === fromUrl) ? (fromUrl as Tab) : 'notas')
+  const fromUrl = searchParams.get('tab')
+  const tab: Tab = TABS.some((t) => t.id === fromUrl) ? (fromUrl as Tab) : 'notas'
 
   function selectTab(t: Tab) {
-    setTab(t)
-    setSearchParams({ tab: t })
+    setSearchParams({ tab: t }, { replace: true })
   }
 
   return (

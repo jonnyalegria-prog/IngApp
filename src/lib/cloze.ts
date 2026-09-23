@@ -1,3 +1,5 @@
+import { spanishScore } from './notesParser'
+
 export interface ClozeExercise {
   prompt: string
   answer: string
@@ -30,13 +32,22 @@ const CLOZE_TARGETS = [
   'for',
 ]
 
+// Quita la traducción que a veces acompaña a la frase ("what do you do? = (a qué te dedicas?)"),
+// para que no quede en el enunciado regalando la respuesta.
+function withoutGloss(sentence: string): string {
+  const [head, ...rest] = sentence.split(/\s+(?:=|→|->|[-–—])\s+/)
+  return rest.length > 0 && spanishScore(rest.join(' ')) >= 0 ? head : sentence
+}
+
 // Builds a fill-in-the-blank exercise from a sentence by blanking the first
 // grammar target word/phrase found in it. Zero cost, zero AI — a simple
 // heuristic so every task or grammar note with an example sentence can turn
 // into practice, not just a checkbox.
 export function generateCloze(sentence: string): ClozeExercise | null {
-  const clean = sentence.trim()
+  const clean = withoutGloss(sentence.trim())
   if (clean.length < 8 || clean.length > 140) return null
+  // Una línea en español ("Practicar diferencia entre yet y already") no sirve de ejercicio aunque traiga una palabra en inglés.
+  if (spanishScore(clean) >= 1) return null
 
   const lower = clean.toLowerCase()
   for (const target of CLOZE_TARGETS) {

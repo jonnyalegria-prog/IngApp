@@ -41,7 +41,9 @@ export default function PronunciationPractice() {
       const recorder = new MediaRecorder(stream)
       recorder.ondataavailable = (e) => chunksRef.current.push(e.data)
       recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
+        // Safari graba mp4/aac y Chrome webm: se usa el tipo que realmente produjo el grabador,
+        // porque un tipo equivocado impide reproducir el audio en el iPhone.
+        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || chunksRef.current[0]?.type || 'audio/mp4' })
         setAudioUrl(URL.createObjectURL(blob))
         stream.getTracks().forEach((t) => t.stop())
       }
@@ -91,7 +93,7 @@ export default function PronunciationPractice() {
             ⏹️
           </button>
         )}
-        <span className="text-xs text-slate-500">{recording ? 'Grabando... toca para parar' : 'Toca para grabarte'}</span>
+        <span className="text-xs text-slate-400">{recording ? 'Grabando... toca para parar' : 'Toca para grabarte'}</span>
       </div>
 
       {micError && <p className="text-sm text-red-400">{micError}</p>}

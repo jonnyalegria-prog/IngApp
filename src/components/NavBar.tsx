@@ -20,7 +20,7 @@ export default function NavBar() {
             end={link.end}
             className={({ isActive }) =>
               `flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium transition ${
-                isActive ? 'text-violet-400' : 'text-slate-500 hover:text-slate-300'
+                isActive ? 'text-violet-400' : 'text-slate-400 hover:text-slate-300'
               }`
             }
           >

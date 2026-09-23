@@ -176,7 +176,8 @@ export function spanishScore(text: string): number {
     if (w.length >= 5 && /(ción|sión|dad|mente)$/.test(w)) score += 2
     if (w.length >= 6 && /(arse|erse|irse)$/.test(w)) score += 3
     if (w.length >= 5 && /(ar|ir)$/.test(w)) score += 1
-    if (w.length >= 5 && /(ing|ly|ness|ful|less|ment|tion|able|ible)$/.test(w)) score -= 2
+    // -able / -ible no cuentan: existen igual en español (responsable, posible).
+    if (w.length >= 5 && /(ing|ly|ness|ful|less|ment|tion)$/.test(w)) score -= 2
     if (/[kw]/.test(w)) score -= 1
     if (/th|sh|ck|wh|ough/.test(w)) score -= 1
   }
@@ -190,7 +191,9 @@ function looksLikeSentence(text: string): boolean {
 }
 
 function isLabel(text: string): boolean {
-  return LABELS.has(text.toLowerCase().replace(/[:.\s]+$/, ''))
+  const t = text.toLowerCase().replace(/[:.\s]+$/, '')
+  // También en plural: "Vocabularios", "Ejemplos".
+  return LABELS.has(t) || LABELS.has(t.replace(/s$/, ''))
 }
 
 function capitalize(text: string): string {
@@ -243,17 +246,18 @@ function toVocab(line: string): ClassifiedLine | null {
   return { kind: 'vocab', text: line, term, meaning, swapped }
 }
 
-// Una palabra en inglés sola en su línea ("run", "to give up"): vocabulario a la espera de su significado.
+// Una palabra o expresión en inglés sola en su línea ("to give up", "beautiful"): vocabulario a la espera
+// de su significado. Solo si hay pistas claras de que es inglés: una palabra suelta sin acento ("colores",
+// "familia") se ve igual en los dos idiomas y, si se tratara como inglés, apuntes en español quedarían llenos
+// de "palabras" falsas. Sin pistas, la línea va a Gramática (y desde la vista previa se puede mover).
 function toLoneWord(line: string): ClassifiedLine | null {
   if (line.length > 30 || !/^[A-Za-z][A-Za-z' -]*$/.test(line)) return null
   const ws = line.split(/\s+/)
-  if (ws.length > 3 || isLabel(line) || spanishScore(line) >= 1) return null
+  if (ws.length > 3 || isLabel(line)) return null
   if (ws.some((w) => GRAMMAR_WORDS.has(w.toLowerCase()))) return null
-  const single = ws.length === 1
-  const infinitive = /^to\s+[a-z]/i.test(line)
-  const allLowercase = line === line.toLowerCase()
-  // "Present perfect" (con mayúscula) parece el título de un tema; "give up" o "to give up", una expresión.
-  if (!single && !infinitive && !allLowercase) return null
+  if (spanishScore(line) > -1) return null
+  // "Present perfect" (con mayúscula) parece el título de un tema.
+  if (ws.length > 1 && !/^to\s+[a-z]/i.test(line) && line !== line.toLowerCase()) return null
   return { kind: 'vocab', text: line, term: line, meaning: '' }
 }
 

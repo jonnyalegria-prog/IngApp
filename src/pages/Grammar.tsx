@@ -66,12 +66,12 @@ export default function Grammar() {
           <div key={topic.id} className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
             <div className="flex items-start justify-between gap-2">
               <h3 className="font-medium text-white">{topic.title}</h3>
-              <button onClick={() => remove(topic.id)} className="text-slate-500 hover:text-red-400">
+              <button onClick={() => remove(topic.id)} className="text-slate-400 hover:text-red-400">
                 ✕
               </button>
             </div>
             {topic.notes && <p className="mt-1 whitespace-pre-wrap text-sm text-slate-400">{topic.notes}</p>}
-            <div className="mt-3 flex items-center gap-3 text-xs text-slate-500">
+            <div className="mt-3 flex items-center gap-3 text-xs text-slate-400">
               {topic.lastReviewed ? (
                 <span>Repasado el {new Date(topic.lastReviewed).toLocaleDateString('es-CL')}</span>
               ) : (

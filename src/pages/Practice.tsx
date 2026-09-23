@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import VocabPractice from './practice/VocabPractice'
 import GrammarPractice from './practice/GrammarPractice'
@@ -19,9 +18,11 @@ const TABS: { id: Tab; label: string }[] = [
 ]
 
 export default function Practice() {
-  const [searchParams] = useSearchParams()
-  const fromUrl = searchParams.get('tab') as Tab | null
-  const [tab, setTab] = useState<Tab>(TABS.some((t) => t.id === fromUrl) ? (fromUrl as Tab) : 'vocabulario')
+  // La pestaña sale de la dirección (?tab=), así el botón atrás y los enlaces internos la cambian de verdad.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const fromUrl = searchParams.get('tab')
+  const tab: Tab = TABS.some((t) => t.id === fromUrl) ? (fromUrl as Tab) : 'vocabulario'
+  const setTab = (t: Tab) => setSearchParams({ tab: t }, { replace: true })
 
   return (
     <div className="flex flex-col gap-6">

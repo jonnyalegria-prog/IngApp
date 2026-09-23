@@ -92,14 +92,14 @@ export default function VocabSuggestions({ existingTerms, onAdd }: Props) {
                 <div className="flex items-center gap-2 font-medium text-white">
                   {s.term}
                   {canSpeak() && (
-                    <button onClick={() => speak(s.term)} className="text-slate-500 hover:text-violet-400" title="Escuchar">
+                    <button onClick={() => speak(s.term)} className="text-slate-400 hover:text-violet-400" title="Escuchar">
                       🔊
                     </button>
                   )}
                   <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] font-normal text-slate-400">{s.theme}</span>
                 </div>
                 <div className="text-sm text-sky-300">{s.translation}</div>
-                <div className="text-xs italic text-slate-500">"{s.example}"</div>
+                <div className="text-xs italic text-slate-400">"{s.example}"</div>
                 {s.note && <div className="mt-1 text-xs text-amber-400">⚠ {s.note}</div>}
               </div>
               <button

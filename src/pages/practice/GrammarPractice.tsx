@@ -3,6 +3,7 @@ import * as storage from '../../lib/storage'
 import { markPracticed } from '../../lib/storage'
 import { getGrammarExercises, type GrammarMcqContent } from '../../lib/exerciseBank'
 import { generateClozeSet, type ClozeExercise } from '../../lib/cloze'
+import { shuffle } from '../../lib/shuffle'
 
 const TOPIC_LABELS: Record<string, string> = {
   to_be: 'Verbo to be',
@@ -140,7 +141,8 @@ function TopicMcqSession({ topic, onExit }: { topic: string; onExit: () => void 
   const [score, setScore] = useState(0)
 
   useEffect(() => {
-    getGrammarExercises(topic).then(setExercises)
+    // Ejercicios y alternativas en orden distinto cada vez, para que la respuesta no sea predecible.
+    getGrammarExercises(topic).then((list) => setExercises(shuffle(list).map((ex) => ({ ...ex, options: shuffle(ex.options) }))))
   }, [topic])
 
   if (!exercises) return <p className="text-slate-400">Cargando...</p>
@@ -184,7 +186,7 @@ function TopicMcqSession({ topic, onExit }: { topic: string; onExit: () => void 
           if (selected) {
             if (isCorrect) style = 'border-emerald-600 bg-emerald-950/40 text-emerald-300'
             else if (isSelected) style = 'border-red-600 bg-red-950/40 text-red-300'
-            else style = 'border-slate-800 bg-slate-900 text-slate-500'
+            else style = 'border-slate-800 bg-slate-900 text-slate-400'
           }
           return (
             <button key={option} onClick={() => choose(option)} className={`rounded-md border p-3 text-left ${style}`}>

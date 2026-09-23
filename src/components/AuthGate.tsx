@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
-import { getSession, onAuthChange, signIn, signOut, signUp } from '../lib/auth'
+import { getSession, onAuthChange, signIn, signUp } from '../lib/auth'
 
 export default function AuthGate({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null | 'loading'>('loading')
@@ -13,17 +13,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   if (session === 'loading') return <div className="p-8 text-center text-slate-400">Cargando...</div>
   if (!session) return <LoginForm />
 
-  return (
-    <>
-      {children}
-      <button
-        onClick={() => signOut()}
-        className="fixed right-3 top-3 z-20 rounded-md bg-slate-800 px-3 py-1.5 text-xs text-slate-400 hover:bg-slate-700"
-      >
-        Cerrar sesión
-      </button>
-    </>
-  )
+  return <>{children}</>
 }
 
 // Supabase responde en inglés; se traduce lo más común a un mensaje claro y amable.

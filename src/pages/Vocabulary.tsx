@@ -120,7 +120,7 @@ function AddWordForm({
         >
           {translating ? 'Traduciendo...' : '🌐 Traducir'}
         </button>
-        <span className="text-xs text-slate-500">Completa un campo y traduzco el otro.</span>
+        <span className="text-xs text-slate-400">Completa un campo y traduzco el otro.</span>
       </div>
       {translateError && <p className="mt-2 text-sm text-red-400">{translateError}</p>}
     </form>
@@ -145,16 +145,16 @@ function WordList({
               <div className="flex items-center gap-2 font-medium text-white">
                 {word.term}
                 {canSpeak() && (
-                  <button onClick={() => speak(word.term)} className="text-slate-500 hover:text-violet-400" title="Escuchar">
+                  <button onClick={() => speak(word.term)} className="text-slate-400 hover:text-violet-400" title="Escuchar">
                     🔊
                   </button>
                 )}
                 {isDue(word) && <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] text-amber-400">a repasar</span>}
               </div>
               <div className="text-sm text-slate-400">{word.translation}</div>
-              {word.example && <div className="text-xs italic text-slate-500">"{word.example}"</div>}
+              {word.example && <div className="text-xs italic text-slate-400">"{word.example}"</div>}
             </div>
-            <button onClick={() => onRemove(word.id)} className="text-slate-500 hover:text-red-400">
+            <button onClick={() => onRemove(word.id)} className="text-slate-400 hover:text-red-400">
               ✕
             </button>
           </div>

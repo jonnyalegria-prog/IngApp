@@ -187,7 +187,7 @@ function GuidedWriting() {
         <div className="mt-3 rounded-md border border-emerald-700/40 bg-emerald-950/30 p-3 text-sm">
           <p className="text-slate-400">Así lo traduce DeepL:</p>
           <p className="text-emerald-300">{result.reference}</p>
-          <p className="mt-1 text-xs text-slate-500">Puede haber más de una forma correcta: fíjate en el tiempo verbal y el orden.</p>
+          <p className="mt-1 text-xs text-slate-400">Puede haber más de una forma correcta: fíjate en el tiempo verbal y el orden.</p>
         </div>
       )}
       {result?.backTranslation && (

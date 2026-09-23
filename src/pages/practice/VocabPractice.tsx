@@ -72,7 +72,7 @@ export default function VocabPractice() {
               e.stopPropagation()
               speak(current.term)
             }}
-            className="text-slate-500 hover:text-violet-400"
+            className="text-slate-400 hover:text-violet-400"
           >
             🔊 Escuchar
           </button>
@@ -83,7 +83,7 @@ export default function VocabPractice() {
             {current.example && <div className="text-sm italic text-slate-400">"{current.example}"</div>}
           </div>
         ) : (
-          <p className="text-sm text-slate-500">Toca para ver el significado</p>
+          <p className="text-sm text-slate-400">Toca para ver el significado</p>
         )}
       </div>
 

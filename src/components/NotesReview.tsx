@@ -1,34 +1,8 @@
 import { useState } from 'react'
 import { ArrowLeftRight } from 'lucide-react'
 import { pairFromLine, type ClassifiedLine } from '../lib/notesParser'
+import { toReviewItems, type ReviewItem, type ReviewKind } from '../lib/reviewItems'
 import { errorMessage, matchCase, translate } from '../lib/translate'
-
-export type ReviewKind = 'vocab' | 'task' | 'grammar' | 'skip'
-
-export interface ReviewItem {
-  id: string
-  kind: ReviewKind
-  /** Línea de tus apuntes (tarea o gramática se editan acá). */
-  text: string
-  /** Vocabulario: inglés y español. */
-  term: string
-  meaning: string
-  /** La app dio vuelta el orden porque el inglés venía a la derecha. */
-  swapped?: boolean
-  /** DeepL devolvió la misma palabra: probablemente ya era español. */
-  sameWord?: boolean
-}
-
-export function toReviewItems(lines: ClassifiedLine[]): ReviewItem[] {
-  return lines.map((l) => ({
-    id: crypto.randomUUID(),
-    kind: l.kind,
-    text: l.text,
-    term: l.term ?? '',
-    meaning: l.meaning ?? '',
-    swapped: l.swapped,
-  }))
-}
 
 interface Props {
   lines: ClassifiedLine[]
@@ -250,7 +224,7 @@ function Row({
           />
         </div>
         <div className="flex items-center justify-between gap-2">
-          <span className={`text-xs ${item.sameWord || noMeaning ? 'text-amber-400' : 'text-slate-500'}`}>{note}</span>
+          <span className={`text-xs ${item.sameWord || noMeaning ? 'text-amber-400' : 'text-slate-400'}`}>{note}</span>
           <KindSelect item={item} onMove={onMove} />
         </div>
       </div>

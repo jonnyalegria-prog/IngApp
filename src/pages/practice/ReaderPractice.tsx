@@ -54,7 +54,7 @@ export default function ReaderPractice() {
         </select>
       </div>
 
-      {visible.length === 0 && <p className="text-sm text-slate-500">Aún no hay lecturas para este nivel.</p>}
+      {visible.length === 0 && <p className="text-sm text-slate-400">Aún no hay lecturas para este nivel.</p>}
       {visible.map((t) => (
         <button
           key={t.id}
@@ -68,7 +68,7 @@ export default function ReaderPractice() {
 
       <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
         <h2 className="mb-2 font-medium text-white">Leer un texto mío</h2>
-        <p className="mb-2 text-xs text-slate-500">
+        <p className="mb-2 text-xs text-slate-400">
           Pega un texto en inglés (un mensaje, un artículo corto). Solo se envían a DeepL las palabras que toques, con su
           oración como contexto.
         </p>
@@ -190,7 +190,7 @@ function Reader({ text, onBack }: { text: OpenText; onBack: () => void }) {
                 <div className="flex items-center gap-2 text-lg font-semibold text-white">
                   {selection.word}
                   {canSpeak() && (
-                    <button onClick={() => speak(selection.word)} className="text-base text-slate-500 hover:text-violet-400">
+                    <button onClick={() => speak(selection.word)} className="text-base text-slate-400 hover:text-violet-400">
                       🔊
                     </button>
                   )}
@@ -199,7 +199,7 @@ function Reader({ text, onBack }: { text: OpenText; onBack: () => void }) {
                 {translation !== null && <p className="text-sky-300">{translation}</p>}
                 {error && <p className="text-sm text-red-400">{error}</p>}
               </div>
-              <button onClick={() => setSelection(null)} className="text-slate-500 hover:text-white" aria-label="Cerrar">
+              <button onClick={() => setSelection(null)} className="text-slate-400 hover:text-white" aria-label="Cerrar">
                 ✕
               </button>
             </div>

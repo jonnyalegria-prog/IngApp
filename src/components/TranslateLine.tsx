@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { errorMessage, translateOne, type Lang } from '../lib/translate'
 
 interface Props {
@@ -20,40 +20,34 @@ export default function TranslateLine({
   cache = true,
   label = 'Ver en español',
 }: Props) {
-  const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
-  const [value, setValue] = useState('')
-  const [error, setError] = useState('')
-
-  useEffect(() => {
-    setState('idle')
-    setValue('')
-    setError('')
-  }, [text, context, from, to])
+  // El resultado se guarda junto con el texto que lo originó: si el texto cambia, deja de valer solo
+  // (sin necesidad de reiniciar el estado desde un efecto).
+  const key = JSON.stringify([text, context ?? '', from, to])
+  const [run, setRun] = useState<{ key: string; status: 'loading' | 'done' | 'error'; value: string } | null>(null)
+  const current = run && run.key === key ? run : null
 
   async function handleClick() {
-    setState('loading')
+    setRun({ key, status: 'loading', value: '' })
     try {
-      setValue(await translateOne(text, { from, to, cache, context }))
-      setState('done')
+      setRun({ key, status: 'done', value: await translateOne(text, { from, to, cache, context }) })
     } catch (err) {
-      setError(errorMessage(err))
-      setState('error')
+      setRun({ key, status: 'error', value: errorMessage(err) })
     }
   }
 
-  if (state === 'done') return <p className="mt-1 text-xs italic text-sky-300">{value}</p>
+  if (current?.status === 'done') return <p className="mt-1 text-xs italic text-sky-300">{current.value}</p>
 
   return (
     <div className="mt-1">
       <button
         type="button"
         onClick={handleClick}
-        disabled={state === 'loading'}
-        className="text-xs text-slate-500 hover:text-violet-400 disabled:opacity-60"
+        disabled={current?.status === 'loading'}
+        className="text-xs text-slate-400 hover:text-violet-400 disabled:opacity-60"
       >
-        🌐 {state === 'loading' ? 'Traduciendo...' : label}
+        🌐 {current?.status === 'loading' ? 'Traduciendo...' : label}
       </button>
-      {state === 'error' && <p className="text-xs text-red-400">{error}</p>}
+      {current?.status === 'error' && <p className="text-xs text-red-400">{current.value}</p>}
     </div>
   )
 }

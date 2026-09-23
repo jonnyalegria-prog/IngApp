@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Dumbbell, GraduationCap, BookOpen, PenLine, ClipboardList, Lightbulb, Trophy, type LucideIcon } from 'lucide-react'
+import { Dumbbell, Flame, GraduationCap, BookOpen, PenLine, ClipboardList, Lightbulb, Trophy, type LucideIcon } from 'lucide-react'
 import { useVocabStore } from '../store/useVocabStore'
 import * as storage from '../lib/storage'
-import { getWeekKey } from '../lib/week'
+import { getWeekKey, localDateString } from '../lib/week'
 import { exportAllData } from '../lib/exportData'
 import { achievements, calculatePoints } from '../lib/gamification'
 import type { DiscoveryPick, GrammarTopic, HomeworkTask, NotebookEntry, Word } from '../lib/types'
@@ -15,6 +15,7 @@ export default function Dashboard() {
   const [notebookEntries, setNotebookEntries] = useState<NotebookEntry[]>([])
   const [grammarTopics, setGrammarTopics] = useState<GrammarTopic[]>([])
   const [streak, setStreak] = useState(0)
+  const [practicedToday, setPracticedToday] = useState(false)
 
   useEffect(() => {
     if (!loaded) load()
@@ -22,7 +23,10 @@ export default function Dashboard() {
     storage.getDiscoveryPicks().then(setPicks)
     storage.getNotebookEntries().then(setNotebookEntries)
     storage.getGrammarTopics().then(setGrammarTopics)
-    storage.getSettings().then((s) => setStreak(s.streak))
+    storage.getSettings().then((s) => {
+      setStreak(s.streak)
+      setPracticedToday(s.lastPracticeDate === localDateString())
+    })
   }, [loaded, load])
 
   const due = dueWords().length
@@ -51,6 +55,22 @@ export default function Dashboard() {
       <div>
         <h1 className="text-2xl font-semibold text-white">¡Hola de nuevo! 👋</h1>
         <p className="text-slate-400">Tu compañero para las clases de inglés, todos los días.</p>
+      </div>
+
+      <div className="flex items-center gap-4 rounded-2xl border border-amber-700/40 bg-amber-950/20 p-4">
+        <Flame size={32} className="shrink-0 text-amber-400" fill="currentColor" />
+        <div>
+          <div className="text-xl font-semibold text-white">
+            {streak === 0 ? 'Aún sin racha' : `${streak} ${streak === 1 ? 'día' : 'días'} de racha`}
+          </div>
+          <div className="text-sm text-slate-300">
+            {practicedToday
+              ? '¡Hoy ya practicaste! Vuelve mañana.'
+              : streak > 0
+                ? 'Practica hoy para no perderla.'
+                : 'Practica hoy y parte tu racha.'}
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-3">
@@ -112,7 +132,7 @@ export default function Dashboard() {
 
       <ProgressSection words={words} picks={picks} tasks={tasks} notebookEntries={notebookEntries} grammarTopics={grammarTopics} />
 
-      <button onClick={() => exportAllData()} className="self-start text-xs text-slate-500 underline hover:text-slate-300">
+      <button onClick={() => exportAllData()} className="self-start text-xs text-slate-400 underline hover:text-slate-300">
         Exportar mis datos (backup)
       </button>
     </div>
@@ -203,7 +223,7 @@ function MiniBarChart({ title, data, color }: { title: string; data: { label: st
               style={{ height: `${Math.max((d.count / max) * 100, 4)}%`, backgroundColor: color }}
               title={`Semana ${d.label}: ${d.count}`}
             />
-            <span className="text-[9px] text-slate-500">{d.count}</span>
+            <span className="text-[9px] text-slate-400">{d.count}</span>
           </div>
         ))}
       </div>

@@ -167,7 +167,7 @@ export default function Tasks() {
               className="mb-2 flex w-full items-center gap-2 text-left"
               aria-expanded={open}
             >
-              {open ? <ChevronDown size={16} className="text-slate-500" /> : <ChevronRight size={16} className="text-slate-500" />}
+              {open ? <ChevronDown size={16} className="text-slate-400" /> : <ChevronRight size={16} className="text-slate-400" />}
               <h2 className="flex-1 font-medium text-white">
                 {group.classDate ? `Clase del ${formatClassDate(group.classDate)}` : 'Sin clase asignada'}
               </h2>
@@ -202,9 +202,9 @@ function TaskRow({
   return (
     <div className="flex items-center gap-3 p-3">
       <input type="checkbox" checked={task.done} onChange={() => onToggle(task)} className="h-4 w-4 accent-violet-600" />
-      <span className={`flex-1 text-sm ${task.done ? 'text-slate-500 line-through' : 'text-white'}`}>{task.text}</span>
+      <span className={`flex-1 text-sm ${task.done ? 'text-slate-400 line-through' : 'text-white'}`}>{task.text}</span>
       {hasExercise && !task.done && <span className="text-xs text-violet-400">✏️ ejercicio</span>}
-      <button onClick={() => onRemove(task.id)} className="text-slate-500 hover:text-red-400">
+      <button onClick={() => onRemove(task.id)} className="text-slate-400 hover:text-red-400">
         ✕
       </button>
     </div>

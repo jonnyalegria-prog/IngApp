@@ -66,7 +66,7 @@ export default function GrammarFeedback({ items, partial }: Props) {
               )}
 
               {item.originalMessage && (
-                <p lang="en" translate="no" className="mt-1.5 text-xs text-slate-500">
+                <p lang="en" translate="no" className="mt-1.5 text-xs text-slate-400">
                   Corrector: {item.originalMessage}
                 </p>
               )}

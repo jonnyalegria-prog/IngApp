@@ -3,7 +3,8 @@ import { useVocabStore } from '../store/useVocabStore'
 import { classifyNotes, extractClassDate, type ClassifiedLine } from '../lib/notesParser'
 import * as storage from '../lib/storage'
 import { localDateString } from '../lib/week'
-import NotesReview, { type ReviewItem } from '../components/NotesReview'
+import NotesReview from '../components/NotesReview'
+import type { ReviewItem } from '../lib/reviewItems'
 import type { GrammarTopic, HomeworkTask, NotebookEntry } from '../lib/types'
 
 function today() {
@@ -208,7 +209,7 @@ export default function Notebook() {
               className="flex w-full items-center justify-between text-left"
             >
               <span className="font-medium text-white">{formatDate(entry.classDate)}</span>
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-slate-400">
                 {entry.vocabCount} palabra(s)
                 {entry.taskCount > 0 && ` · ${entry.taskCount} tarea(s)`}
                 {entry.grammarSaved && ' · gramática'}

@@ -83,7 +83,7 @@ export default function Discovery() {
             {thisWeekPicks.map((pick) => (
               <div key={pick.id} className="flex items-center justify-between gap-2 rounded-md border border-slate-800 bg-slate-950/50 p-3">
                 <span className="text-sm text-white">{pick.text}</span>
-                <button onClick={() => removePick(pick.id)} className="shrink-0 text-slate-500 hover:text-red-400">
+                <button onClick={() => removePick(pick.id)} className="shrink-0 text-slate-400 hover:text-red-400">
                   ✕
                 </button>
               </div>
@@ -138,7 +138,7 @@ export default function Discovery() {
                         <div>
                           <div className="text-sm font-medium text-violet-300">{item.title}</div>
                           <p className="mt-1 text-sm text-slate-300">{item.explanation}</p>
-                          <p className="mt-1 text-xs italic text-slate-500">"{item.example}"</p>
+                          <p className="mt-1 text-xs italic text-slate-400">"{item.example}"</p>
                         </div>
                         <button
                           onClick={() => addPick(item.title, 'suggestion')}
@@ -162,7 +162,7 @@ export default function Discovery() {
           <div className="flex flex-col gap-2">
             {pastWeeks.map(([week, weekPicks]) => (
               <div key={week} className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
-                <div className="mb-2 text-xs text-slate-500">Semana {week}</div>
+                <div className="mb-2 text-xs text-slate-400">Semana {week}</div>
                 <ul className="flex flex-col gap-1">
                   {weekPicks.map((pick) => (
                     <li key={pick.id} className="text-sm text-slate-300">

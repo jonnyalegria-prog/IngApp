@@ -41,7 +41,7 @@ export default function DialoguePractice() {
     return (
       <div className="flex flex-col gap-3">
         <p className="text-slate-400">Elige un escenario para practicar un diálogo guiado.</p>
-        {dialogues.length === 0 && <p className="text-sm text-slate-500">Aún no hay diálogos cargados.</p>}
+        {dialogues.length === 0 && <p className="text-sm text-slate-400">Aún no hay diálogos cargados.</p>}
         {dialogues.map((d, i) => (
           <button
             key={i}
@@ -74,7 +74,7 @@ export default function DialoguePractice() {
           >
             <div className="flex items-center gap-2">
               {line.speaker === 'npc' && canSpeak() && (
-                <button onClick={() => speak(line.text)} className="shrink-0 text-slate-500 hover:text-violet-400">
+                <button onClick={() => speak(line.text)} className="shrink-0 text-slate-400 hover:text-violet-400">
                   🔊
                 </button>
               )}
