@@ -16,7 +16,14 @@ export default function GrammarPractice() {
   useEffect(() => {
     async function loadPersonal() {
       const [tasks, topics] = await Promise.all([storage.getHomeworkTasks(), storage.getGrammarTopics()])
-      const lines = [...tasks.map((t) => t.text), ...topics.flatMap((t) => t.notes.split('\n'))]
+      // Primero lo pendiente y lo más reciente; lo ya hecho o viejo va al final del repaso.
+      const recency = (t: (typeof tasks)[number]) => t.classDate ?? t.createdAt.slice(0, 10)
+      const orderedTasks = [...tasks].sort((a, b) => {
+        if (a.done !== b.done) return a.done ? 1 : -1
+        return recency(b).localeCompare(recency(a))
+      })
+      const orderedTopics = [...topics].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      const lines = [...orderedTasks.map((t) => t.text), ...orderedTopics.flatMap((t) => t.notes.split('\n'))]
       setPersonalCloze(generateClozeSet(lines))
     }
     loadPersonal()

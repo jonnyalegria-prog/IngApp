@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react'
 import { useVocabStore } from '../store/useVocabStore'
 import { extractClassDate, parseNotes } from '../lib/notesParser'
 import * as storage from '../lib/storage'
+import { localDateString } from '../lib/week'
 import type { GrammarTopic, HomeworkTask, NotebookEntry } from '../lib/types'
 
 function today() {
-  return new Date().toISOString().slice(0, 10)
+  return localDateString()
 }
 
 function formatDate(iso: string) {
@@ -54,6 +55,7 @@ export default function Notebook() {
           text: taskText,
           done: false,
           createdAt: new Date().toISOString(),
+          classDate,
         }
         await storage.saveHomeworkTask(task)
       }

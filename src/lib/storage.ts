@@ -122,6 +122,8 @@ export async function getHomeworkTasks(): Promise<HomeworkTask[]> {
     text: row.text,
     done: row.done,
     createdAt: row.created_at,
+    classDate: row.class_date ?? undefined,
+    completedAt: row.completed_at ?? undefined,
     exerciseTopic: row.exercise_topic ?? undefined,
   }))
 }
@@ -132,6 +134,8 @@ export async function saveHomeworkTask(task: HomeworkTask): Promise<void> {
     text: task.text,
     done: task.done,
     created_at: task.createdAt,
+    class_date: task.classDate ?? null,
+    completed_at: task.completedAt ?? null,
     exercise_topic: task.exerciseTopic ?? null,
   })
   if (error) throw error

@@ -13,3 +13,17 @@ export function getWeekKey(date = new Date()): string {
   const { year, week } = isoWeek(date)
   return `${year}-W${String(week).padStart(2, '0')}`
 }
+
+// Fecha local en YYYY-MM-DD. `toISOString()` da la fecha UTC, que en Argentina
+// ya es "mañana" desde las 21:00 (justo cuando termina una clase de domingo).
+export function localDateString(date = new Date()): string {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+// Cuenta días de calendario entre dos fechas YYYY-MM-DD (b - a).
+export function daysBetween(a: string, b: string): number {
+  return Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 86400000)
+}

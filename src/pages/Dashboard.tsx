@@ -152,7 +152,8 @@ function ProgressSection({
   const picksPerWeek = weeklyBuckets(picks, (p) => p.weekKey, 8)
   const tasksDonePerWeek = weeklyBuckets(
     tasks.filter((t) => t.done),
-    (t) => getWeekKey(new Date(t.createdAt)),
+    // Cuenta en la semana en que se tildó (las viejas sin fecha usan la de creación).
+    (t) => getWeekKey(new Date(t.completedAt ?? t.createdAt)),
     8,
   )
   const classesPerWeek = weeklyBuckets(notebookEntries, (n) => getWeekKey(new Date(n.classDate + 'T00:00:00')), 8)

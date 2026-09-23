@@ -35,6 +35,10 @@ export interface HomeworkTask {
   text: string
   done: boolean
   createdAt: string
+  /** Fecha (YYYY-MM-DD) de la clase que dejó la tarea; agrupa la lista por clase. */
+  classDate?: string
+  /** Cuándo se tildó como hecha; el progreso semanal cuenta por esta fecha. */
+  completedAt?: string
   exerciseTopic?: string
 }
 
