@@ -17,6 +17,7 @@ export default function Notebook() {
   const { addWords } = useVocabStore()
   const [classDate, setClassDate] = useState(today())
   const [dateAutoDetected, setDateAutoDetected] = useState(false)
+  const [dateManual, setDateManual] = useState(false)
   const [rawText, setRawText] = useState('')
   const [entries, setEntries] = useState<NotebookEntry[]>([])
   const [saving, setSaving] = useState(false)
@@ -29,11 +30,18 @@ export default function Notebook() {
     storage.getNotebookEntries().then(setEntries)
   }, [])
 
-  function handleBlurNotes() {
-    const detected = extractClassDate(rawText)
+  // Se detecta al escribir o pegar (no al salir del cuadro: en iPhone tocar un botón puede no contar como salir).
+  // Si vos elegís la fecha a mano, esa manda.
+  function handleNotesChange(text: string) {
+    setRawText(text)
+    if (dateManual) return
+    const detected = extractClassDate(text)
     if (detected) {
       setClassDate(detected)
       setDateAutoDetected(true)
+    } else if (dateAutoDetected) {
+      setClassDate(today())
+      setDateAutoDetected(false)
     }
   }
 
@@ -42,6 +50,8 @@ export default function Notebook() {
     if (!rawText.trim()) return
     setSaving(true)
     try {
+      // Red de seguridad: se vuelve a mirar el texto al guardar, salvo que hayas elegido la fecha a mano.
+      const finalDate = (dateManual ? classDate : (extractClassDate(rawText) ?? classDate)) || today()
       const { vocab, tasks, grammar } = parseNotes(rawText)
       const validVocab = vocab.filter((v) => v.translation.trim())
 
@@ -55,7 +65,7 @@ export default function Notebook() {
           text: taskText,
           done: false,
           createdAt: new Date().toISOString(),
-          classDate,
+          classDate: finalDate,
         }
         await storage.saveHomeworkTask(task)
       }
@@ -63,7 +73,7 @@ export default function Notebook() {
       if (grammar.length > 0) {
         const topic: GrammarTopic = {
           id: crypto.randomUUID(),
-          title: `Clase del ${formatDate(classDate)}`,
+          title: `Clase del ${formatDate(finalDate)}`,
           notes: grammar.join('\n'),
           createdAt: new Date().toISOString(),
         }
@@ -72,7 +82,7 @@ export default function Notebook() {
 
       const entry: NotebookEntry = {
         id: crypto.randomUUID(),
-        classDate,
+        classDate: finalDate,
         rawText,
         createdAt: new Date().toISOString(),
         vocabCount: validVocab.length,
@@ -85,6 +95,7 @@ export default function Notebook() {
       setRawText('')
       setClassDate(today())
       setDateAutoDetected(false)
+      setDateManual(false)
     } finally {
       setSaving(false)
     }
@@ -95,7 +106,7 @@ export default function Notebook() {
       <p className="text-sm text-slate-400">
         Pegá tus apuntes tal cual los tomás en clase. Al guardar, la app separa sola el vocabulario nuevo, las
         tareas para la semana (a la pestaña de Tareas) y manda el resto a Gramática. Si escribís algo como
-        "Clase 13/09" en el texto, detecta la fecha sola.
+        "Clase 13/09", "Domingo 13/09" o "13 de septiembre" (día y mes, en una línea), detecta la fecha sola.
       </p>
 
       <form onSubmit={handleSave} className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
@@ -108,13 +119,13 @@ export default function Notebook() {
           onChange={(e) => {
             setClassDate(e.target.value)
             setDateAutoDetected(false)
+            setDateManual(true)
           }}
           className="mb-3 rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white"
         />
         <textarea
           value={rawText}
-          onChange={(e) => setRawText(e.target.value)}
-          onBlur={handleBlurNotes}
+          onChange={(e) => handleNotesChange(e.target.value)}
           rows={8}
           placeholder={
             'run - correr\nto give up: rendirse\nPresent perfect se usa para experiencias sin decir cuándo pasaron\nPracticar diferencia entre yet y already'
