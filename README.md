@@ -1,17 +1,10 @@
 # IngApp v2 — complemento para aprender inglés
 
-Reconstrucción completa de IngApp desde una toma de requerimientos real
-(no iteración al azar). La v1 quedó pausada en el repo `IngApp-v1`.
+App para practicar inglés entre clases: Cuaderno que ordena tus apuntes, tareas por clase, repaso espaciado, ruta de
+aprendizaje con el temario de la profe, práctica de gramática, dictado, escucha, pronunciación y conversación, Diario con
+corrección, recordatorios y reto en pareja. Todo en español de Chile, pensada para el teléfono (PWA instalable).
 
 **En vivo:** https://jonnyalegria-prog.github.io/IngApp/
-
-## Documentos del proyecto
-
-- Requerimientos (funcionales + no funcionales): documento compartido en
-  Claude Docs, acordado con el usuario antes de escribir código.
-- Plan técnico y decisiones de arquitectura:
-  `C:\Users\jonny\.claude\plans\creo-que-no-entendimos-wild-clock.md`
-  (fuera de este repo, en el entorno de la sesión de Claude Code).
 
 ## Cómo correrla localmente
 
@@ -20,78 +13,115 @@ npm install
 npm run dev
 ```
 
-Requiere un `.env.local` con `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`
-(ver `.env.local.example`).
+Requiere un `.env.local` con `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` (ver `.env.local.example`).
 
-## Estado — Fases 1 a 4 completas
+| Comando | Qué hace |
+|---|---|
+| `npm run dev` | servidor de desarrollo |
+| `npm test` | pruebas automáticas (Vitest) |
+| `npm run lint` | lint (oxlint) |
+| `npm run build` | compila para producción (`tsc` + Vite) |
 
-- [x] **Fase 1 — Base**: repo y proyecto de Supabase nuevos, esquema
-      completo desde el inicio, autenticación, layout, navegación inferior
-      y estilo visual (opción C: minimalista oscuro, elegida entre 3
-      mockups).
-- [x] **Fase 2 — Organización**: Cuaderno (clasifica solo vocabulario,
-      tareas y gramática; detecta la fecha de la clase del texto), Tareas
-      (con detección de ejercicio automático disponible), Mis 3 cosas de
-      la semana, Gramática — todo agrupado en "Mi Clase".
-- [x] **Fase 3 — Aprendizaje activo**: Practicar con 5 modos (Vocabulario
-      SRS, Gramática con banco ampliable + ejercicios personalizados
-      generados de tus propias tareas/notas, Dictado, Pronunciación,
-      Conversación con diálogos guiados) + Diario (libre + guiado).
-- [x] **Fase 4 — Motivación**: puntos, 8 logros, progreso detallado.
-- [x] **DeepL**: traducción con contexto, sugerencias de vocabulario por nivel,
-      lectura con traducción al toque y retro-traducción en escritura
-      guiada (ver sección "DeepL" abajo).
-- [ ] Fuera de esta versión: notificaciones push y rol docente con edición
-      en vivo del cuaderno (esquema ya reservado en `shared_access`).
+Al hacer push a `main`, GitHub Actions corre lint, pruebas y compilación, y publica en GitHub Pages (~40 s). Si el lint o las
+pruebas fallan, no se publica.
 
-## DeepL
+## Qué tiene
 
-Usos, todos con el texto del banco de contenido o palabras sueltas (nunca el
-Cuaderno ni el Diario libre):
+**Mi Clase**
+- **Notas (Cuaderno):** pegas tus apuntes y la app separa vocabulario, tareas y gramática (sin IA: reglas + detección de idioma).
+  Antes de guardar muestra cómo quedó y marca lo que ya tienes. Reconoce la fecha de la clase, frases completas con su traducción
+  (`What do you do for a living? = ¿A qué te dedicas?`) y palabras sueltas en inglés. Se puede **editar y volver a revisar** una
+  clase guardada sin duplicar nada.
+- **Tareas** agrupadas por clase, **Mis 3 cosas** de la semana y **Gramática** (temas por clase).
 
-- **Vocabulario → 🌐 Traducir**: completa el campo vacío (EN→ES o ES→EN),
-  usando el ejemplo como contexto.
-- **Vocabulario → Palabras nuevas para ti**: sugerencias por nivel
-  (`vocab_bank`), traducidas según su ejemplo.
-- **Practicar → Lectura**: textos por nivel (`reading_texts`) o texto propio;
-  tocas una palabra y ves su significado según la oración.
-- **Dictado / Conversación**: 🌐 para ver el significado en español.
-- **Diario → Consignas guiadas**: traducción de referencia de DeepL y
-  "retro-traducción" de tu respuesta (más corrección de LanguageTool).
+**Vocabulario:** lista con búsqueda, edición, deshacer al borrar, sin duplicados y sugerencias por nivel con el significado ya escrito.
 
-Cómo está armado:
+**Practicar** (pestañas):
+- **Ruta:** 21 unidades con el temario de la profe (números, colores, familia, casa, días, meses, estaciones, ropa, cuerpo,
+  animales, ordinales, profesiones, ciudad, transporte, 50 verbos, adjetivos y antónimos, clima, sentimientos, conectores, comida
+  y frases útiles). Cada unidad: palabras con audio, agregar a tu vocabulario y mini-prueba (con 70% se completa).
+- **Vocabulario:** repaso espaciado (SM-2), máx. 10 palabras nuevas por día, rondas de 20, lo fallado vuelve en la misma ronda y
+  lo que más cuesta va primero.
+- **Gramática:** 12 temas de opción múltiple + "Mis ejercicios" (generados de tus tareas y notas) + "Repasar mis errores".
+- **Lectura** (toca una palabra para verla), **Dictado** (voz normal o lenta, revisión palabra por palabra), **Escucha**
+  (audio + preguntas), **Pronunciación** (reconocimiento de voz cuando el navegador lo permite; si no, grabarte y compararte) y
+  **Conversación** (diálogos guiados).
 
-- La clave de DeepL API Free vive en **Supabase Vault** (`deepl_api_key`). Solo
-  la lee la Edge Function `supabase/functions/deepl` mediante
-  `public.get_deepl_key()` (ejecutable únicamente por `service_role`). Nunca
-  está en el repo ni en el navegador.
-- La función exige un usuario logueado (`verify_jwt` **y** `auth.getUser`: la
-  clave pública `anon` pasa la primera verificación, no la segunda).
-- Caché compartido `translation_cache` (cada texto del banco se traduce una
-  sola vez para todos) y tope mensual por usuario en `translation_usage`
-  (300.000 de los 1.000.000 caracteres/mes del plan Free); máx. 1.500
-  caracteres por pedido.
-- Para cambiar la clave: `select vault.update_secret(id, 'nueva-clave')` desde
-  el SQL Editor de Supabase (el `id` sale de `select id from vault.secrets
-  where name = 'deepl_api_key'`).
-- **Recomendado:** cuando Jonny y Constanza ya tengan cuenta, desactivar el
-  registro abierto en Supabase → Authentication → Sign In / Providers →
-  "Allow new users to sign up". Sin eso cualquiera podría crear una cuenta y
-  gastar el cupo de DeepL.
+**Diario:** texto libre o consignas guiadas, con corrección de gramática (LanguageTool + reglas para hispanohablantes) y
+retro-traducción.
 
-## Banco de contenido (`exercise_bank`)
+**Inicio:** racha, meta diaria (10 respuestas), "seguir donde quedaste", tu ruta, temas a reforzar, precisión por práctica y logros.
 
-Tabla ampliable sin tocar código: 24 ejercicios de gramática (to be,
-futuro, pasado), 15 frases de dictado, 8 consignas de escritura y 3
-diálogos guiados. Se puede seguir agregando contenido con `INSERT`.
+**Ajustes** (menú de la cuenta): tu nombre, **recordatorios push**, **enlace de solo lectura para la profe** y **reto en pareja**.
 
-## Multiusuario
+## Cómo está armado
 
-Jonny y Constanza usan la app con cuentas independientes (cada una con su
-propio vocabulario, progreso y nivel). La seguridad por fila (RLS) en
-Supabase ya lo soporta sin trabajo extra.
+- **Front:** React 19 + Vite + TypeScript + Tailwind v4, HashRouter, zustand, PWA (`vite-plugin-pwa`, actualización con aviso).
+  Pantallas menos usadas se cargan bajo demanda (`React.lazy`).
+- **Carga y errores:** `useLoad` (estado de error + "Reintentar" + recarga al volver a la app), `ToastProvider` (avisos y "Deshacer"),
+  `ErrorBoundary`, caché de lecturas en memoria (`src/lib/cache.ts`) que las escrituras invalidan.
+- **Datos:** Supabase (Postgres + Auth). Todas las tablas del usuario tienen RLS `to authenticated` con `(select auth.uid())`.
+- **Lógica pura con pruebas** (`src/lib/*.test.ts`): reconocedor de apuntes, guardado sin duplicados (`classSave`), SRS y rondas,
+  cloze, semanas y racha, progreso, quiz de unidades, dictado, recordatorios, corrector.
+
+### Base de datos
+
+| Tabla | Para qué |
+|---|---|
+| `words`, `grammar_topics`, `notebook_entries`, `homework_tasks`, `discovery_picks`, `user_settings` | datos de cada persona |
+| `practice_log` | cada respuesta de práctica (meta diaria, precisión, temas a reforzar, resumen) |
+| `unit_progress` | mejor puntaje por unidad de la ruta |
+| `vocab_bank` | ~640 palabras con su significado escrito a mano (`translation`) y tema (`theme`) |
+| `exercise_bank` | ejercicios: `grammar_mcq`, `dictation`, `dialogue`, `writing_prompt`, `listening` |
+| `reading_texts` | lecturas por nivel |
+| `translation_cache`, `translation_usage` | caché compartido y cupo mensual de DeepL |
+| `push_subscriptions`, `reminder_prefs` | recordatorios |
+| `share_links` | enlaces de solo lectura para la profe |
+| `partner_invites`, `partnerships` | reto en pareja |
+
+El contenido (banco de palabras, ejercicios, textos) se carga con `INSERT` y se puede seguir ampliando sin tocar código. El
+esquema agregado en la fase 3 está en `supabase/migrations/`; las migraciones de datos están en el historial de Supabase.
+
+Funciones SQL: `shared_summary(token)` (público, solo cifras), `create_partner_invite()`, `accept_partner_invite(code)`,
+`partner_overview()` (autenticados) y `get_deepl_key()`, `get_vapid_keys()`, `get_cron_secret()`, `reminder_batch()`,
+`set_vapid_keys()` (solo `service_role`).
+
+### Funciones Edge
+
+- **`deepl`** — proxy de traducción. La clave de DeepL API Free vive en **Vault** (`deepl_api_key`), nunca en el repo ni en el
+  navegador. Exige sesión (`verify_jwt` + `auth.getUser`), caché compartido, tope de 300.000 caracteres/mes por usuario y 1.500 por
+  pedido. Acciones: `translate`, `suggest` (usa el significado del banco y solo llama a DeepL si falta) y `status` (diagnóstico:
+  consumo real de DeepL, tuyo y del caché). Los pasos quedan en los logs (`[deepl] ...`).
+  Solo se envía a DeepL vocabulario y contenido del banco; **nunca** el Cuaderno ni el Diario.
+- **`send-reminders`** — avisos push. `pg_cron` la llama cada hora en punto con un secreto de Vault (`cron_secret`); decide con
+  `reminderRules.ts` (probado con Vitest) y manda con `web-push`. Las claves VAPID se generan solas la primera vez y quedan en
+  Vault. Con sesión, también entrega la clave pública y manda un aviso de prueba.
+
+### Recordatorios
+
+- Aviso diario a la hora que elijas (hora de Chile): "Te esperan N palabras" o "No pierdas tu racha de N días" (solo si no
+  practicaste hoy), y la víspera de tu clase si te quedan tareas. Ventana de 2 horas por si falla una ejecución.
+- **iPhone:** requiere iOS 16.4+ y la app **instalada** (Safari → Compartir → Agregar a inicio, abrir desde el ícono). El permiso se
+  pide desde el botón de Ajustes. Solo se puede comprobar de verdad en un iPhone real.
+
+## Operación
+
+- **Cambiar la clave de DeepL:** `select vault.update_secret(id, 'nueva-clave')` en el SQL Editor (el `id` sale de
+  `select id from vault.secrets where name = 'deepl_api_key'`).
+- **Ver si DeepL funciona:** menú de la cuenta → "Probar la traducción" (muestra la etapa exacta si falla).
+- **Desactivar el registro abierto** (recomendado ahora que las dos cuentas existen): Supabase → Authentication → Sign In /
+  Providers → "Allow new users to sign up". Sin eso cualquiera podría crear una cuenta y gastar el cupo de DeepL. También conviene
+  activar la protección de contraseñas filtradas en el mismo panel.
+- **Apagar los recordatorios para todos:** `select cron.unschedule('send-reminders-hourly');`
+
+## Límites conocidos
+
+- El reconocimiento de voz de Pronunciación depende del navegador; en la app instalada del iPhone puede no estar disponible (la
+  pantalla pasa sola a "grabarme y comparar").
+- Los recordatorios y el micrófono/voz del iPhone solo se prueban en un dispositivo real.
+- Los apuntes se clasifican con reglas (sin IA): cuando duda, manda la línea a Gramática y se puede mover desde la vista previa.
 
 ## Stack
 
-React + Vite + TypeScript + Tailwind CSS · Supabase (Postgres + Auth) ·
-GitHub Pages + GitHub Actions · lucide-react.
+React + Vite + TypeScript + Tailwind CSS · Supabase (Postgres + Auth + Vault + Edge Functions + pg_cron) · GitHub Pages +
+GitHub Actions · lucide-react · Vitest · oxlint.
