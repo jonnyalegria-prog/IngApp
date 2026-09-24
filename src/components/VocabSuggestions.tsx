@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import * as storage from '../lib/storage'
 import { canSpeak, speak } from '../lib/speech'
 import { errorMessage, fetchVocabSuggestions, type VocabSuggestion } from '../lib/translate'
+import { useVocabStore, type AddResult } from '../store/useVocabStore'
 import type { AppSettings, EnglishLevel } from '../lib/types'
 
 const LEVEL_LABELS: Record<EnglishLevel, string> = {
@@ -11,12 +12,12 @@ const LEVEL_LABELS: Record<EnglishLevel, string> = {
 }
 
 interface Props {
-  existingTerms: string[]
-  onAdd: (term: string, translation: string, example?: string) => Promise<void>
+  onAdd: (term: string, translation: string, example?: string) => Promise<AddResult | 'error'>
 }
 
 /** "Palabras nuevas para ti": sugerencias por nivel con traducción de DeepL según el ejemplo. */
-export default function VocabSuggestions({ existingTerms, onAdd }: Props) {
+export default function VocabSuggestions({ onAdd }: Props) {
+  const words = useVocabStore((s) => s.words)
   const [settings, setSettings] = useState<AppSettings>({ streak: 0, level: 'principiante' })
   const [suggestions, setSuggestions] = useState<VocabSuggestion[]>([])
   const [added, setAdded] = useState<Set<string>>(new Set())
@@ -47,7 +48,7 @@ export default function VocabSuggestions({ existingTerms, onAdd }: Props) {
     setLoading(true)
     setError(null)
     try {
-      const exclude = [...existingTerms, ...suggestions.map((s) => s.term)]
+      const exclude = [...words.map((w) => w.term), ...suggestions.map((s) => s.term)]
       const res = await fetchVocabSuggestions(settings.level, 5, exclude)
       setSuggestions(res.suggestions)
       setExhausted(res.exhausted)
@@ -60,8 +61,9 @@ export default function VocabSuggestions({ existingTerms, onAdd }: Props) {
   }
 
   async function add(s: VocabSuggestion) {
-    await onAdd(s.term, s.translation, s.example)
-    setAdded((prev) => new Set(prev).add(s.term))
+    // Si ya la tenías, también queda marcada como agregada.
+    const outcome = await onAdd(s.term, s.translation, s.example)
+    if (outcome !== 'error') setAdded((prev) => new Set(prev).add(s.term))
   }
 
   return (

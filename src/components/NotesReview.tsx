@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ArrowLeftRight } from 'lucide-react'
 import { pairFromLine, type ClassifiedLine } from '../lib/notesParser'
 import { toReviewItems, type ReviewItem, type ReviewKind } from '../lib/reviewItems'
+import { findDuplicates } from '../lib/classSave'
 import { errorMessage, matchCase, translate } from '../lib/translate'
 
 interface Props {
@@ -10,6 +11,10 @@ interface Props {
   saving: boolean
   onBack: () => void
   onSave: (items: ReviewItem[]) => void
+  /** Si esa palabra ya está en tu vocabulario. */
+  hasTerm: (term: string) => boolean
+  /** Tareas que ya tienes de esa clase (texto normalizado). */
+  taskKeys: Set<string>
 }
 
 const SECTIONS: { kind: ReviewKind; title: string }[] = [
@@ -22,7 +27,7 @@ const SECTIONS: { kind: ReviewKind; title: string }[] = [
 const inputClass =
   'min-w-0 flex-1 rounded-md border bg-slate-950 px-2.5 py-1.5 text-sm text-white placeholder:text-slate-500'
 
-export default function NotesReview({ lines, dateLabel, saving, onBack, onSave }: Props) {
+export default function NotesReview({ lines, dateLabel, saving, onBack, onSave, hasTerm, taskKeys }: Props) {
   const [items, setItems] = useState<ReviewItem[]>(() => toReviewItems(lines))
   const [translating, setTranslating] = useState(false)
   const [translateError, setTranslateError] = useState<string | null>(null)
@@ -48,7 +53,9 @@ export default function NotesReview({ lines, dateLabel, saving, onBack, onSave }
     update(it.id, { term: it.meaning, meaning: it.term, swapped: false, sameWord: false })
   }
 
-  const missing = items.filter((it) => it.kind === 'vocab' && it.term.trim() && !it.meaning.trim())
+  // Lo que ya tienes (o viene repetido en tus apuntes) no se vuelve a guardar.
+  const duplicates = findDuplicates(items, hasTerm, taskKeys)
+  const missing = items.filter((it) => it.kind === 'vocab' && it.term.trim() && !it.meaning.trim() && !duplicates.has(it.id))
 
   // Solo se mandan a DeepL las palabras sueltas que faltan, de a 20 (el máximo por pedido).
   async function translateMissing() {
@@ -78,9 +85,12 @@ export default function NotesReview({ lines, dateLabel, saving, onBack, onSave }
     }
   }
 
-  const vocabToSave = items.filter((it) => it.kind === 'vocab' && it.term.trim() && it.meaning.trim()).length
-  const vocabWithoutMeaning = items.filter((it) => it.kind === 'vocab' && !(it.term.trim() && it.meaning.trim())).length
-  const tasks = items.filter((it) => it.kind === 'task' && it.text.trim()).length
+  const vocabToSave = items.filter((it) => it.kind === 'vocab' && it.term.trim() && it.meaning.trim() && !duplicates.has(it.id)).length
+  const vocabWithoutMeaning = items.filter(
+    (it) => it.kind === 'vocab' && !duplicates.has(it.id) && !(it.term.trim() && it.meaning.trim()),
+  ).length
+  const tasks = items.filter((it) => it.kind === 'task' && it.text.trim() && !duplicates.has(it.id)).length
+  const alreadyHave = items.filter((it) => duplicates.has(it.id)).length
   const grammar = items.filter((it) => it.kind === 'grammar' && it.text.trim()).length
   const nothingToSave = vocabToSave + tasks + grammar === 0
 
@@ -122,7 +132,7 @@ export default function NotesReview({ lines, dateLabel, saving, onBack, onSave }
               }`}
             >
               {rows.map((it) => (
-                <Row key={it.id} item={it} onUpdate={update} onSwap={swap} onMove={moveTo} />
+                <Row key={it.id} item={it} duplicate={duplicates.has(it.id)} onUpdate={update} onSwap={swap} onMove={moveTo} />
               ))}
             </div>
           </section>
@@ -131,6 +141,13 @@ export default function NotesReview({ lines, dateLabel, saving, onBack, onSave }
 
       <div className="rounded-2xl border border-violet-700/40 bg-violet-950/20 p-4 text-sm text-violet-200">
         Se guardarán {vocabToSave} palabra(s), {tasks} tarea(s) y {grammar} nota(s) de gramática.
+        {alreadyHave > 0 && (
+          <span className="mt-1 block text-slate-300">
+            {nothingToSave
+              ? 'Todo esto ya lo tenías guardado: no hay nada nuevo que agregar.'
+              : `${alreadyHave === 1 ? 'Hay 1 línea que ya tienes' : `Hay ${alreadyHave} líneas que ya tienes`}: no se ${alreadyHave === 1 ? 'repite' : 'repiten'}.`}
+          </span>
+        )}
         {vocabWithoutMeaning > 0 && (
           <span className="mt-1 block text-amber-300">
             {vocabWithoutMeaning} palabra(s) sin significado no se guardarán: tradúcelas o escríbelas tú.
@@ -178,11 +195,13 @@ function KindSelect({ item, onMove }: { item: ReviewItem; onMove: (id: string, k
 
 function Row({
   item,
+  duplicate,
   onUpdate,
   onSwap,
   onMove,
 }: {
   item: ReviewItem
+  duplicate: boolean
   onUpdate: (id: string, patch: Partial<ReviewItem>) => void
   onSwap: (item: ReviewItem) => void
   onMove: (id: string, kind: ReviewKind) => void
@@ -190,7 +209,8 @@ function Row({
   if (item.kind === 'vocab') {
     const noMeaning = !item.meaning.trim()
     let note = ''
-    if (item.sameWord) note = 'DeepL devolvió la misma palabra: ¿ya estaba en español? Prueba con ⇄.'
+    if (duplicate) note = 'Ya la tienes: no se vuelve a guardar.'
+    else if (item.sameWord) note = 'DeepL devolvió la misma palabra: ¿ya estaba en español? Prueba con ⇄.'
     else if (noMeaning) note = 'Falta el significado.'
     else if (item.swapped) note = 'Le di vuelta: el inglés venía a la derecha.'
 
@@ -224,7 +244,7 @@ function Row({
           />
         </div>
         <div className="flex items-center justify-between gap-2">
-          <span className={`text-xs ${item.sameWord || noMeaning ? 'text-amber-400' : 'text-slate-400'}`}>{note}</span>
+          <span className={`text-xs ${duplicate ? 'text-sky-300' : item.sameWord || noMeaning ? 'text-amber-400' : 'text-slate-400'}`}>{note}</span>
           <KindSelect item={item} onMove={onMove} />
         </div>
       </div>
@@ -240,7 +260,8 @@ function Row({
         aria-label="Texto de la línea"
         className="w-full rounded-md border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-sm text-white"
       />
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs text-sky-300">{duplicate ? 'Ya la tienes: no se vuelve a guardar.' : ''}</span>
         <KindSelect item={item} onMove={onMove} />
       </div>
     </div>

@@ -172,7 +172,14 @@ const PAST_MARKER =
 // Si la oración habla de costumbres o de "desde ayer", el presente puede estar bien.
 const HABIT_OR_SINCE = /\b(since|every|usually|always|often|sometimes|never)\b/i
 
-const ALL_PAST_VERBS = [...Object.keys(IRREGULAR_PAST), ...REGULAR_VERBS, ...REGULAR_VERBS.map((v) => v + 's')]
+// Tercera persona: watch → watches, study → studies, play → plays.
+function thirdPerson(verb: string): string {
+  if (/(s|sh|ch|x|z|o)$/.test(verb)) return verb + 'es'
+  if (/[^aeiou]y$/.test(verb)) return verb.slice(0, -1) + 'ies'
+  return verb + 's'
+}
+
+const ALL_PAST_VERBS = [...Object.keys(IRREGULAR_PAST), ...REGULAR_VERBS, ...REGULAR_VERBS.map(thirdPerson)]
 const SUBJECT_VERB = new RegExp(`\\b(I|you|we|they|he|she|it)\\s+(${ALL_PAST_VERBS.join('|')})\\b`, 'gi')
 
 function findPastMarkerMistakes(text: string): GrammarMatch[] {

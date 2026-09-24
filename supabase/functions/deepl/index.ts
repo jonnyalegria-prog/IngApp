@@ -14,6 +14,7 @@ const ALLOWED_ORIGINS = new Set([
   'http://localhost:4173',
 ])
 const DEEPL_URL = 'https://api-free.deepl.com/v2/translate'
+const DEEPL_USAGE_URL = 'https://api-free.deepl.com/v2/usage'
 const MAX_ITEMS = 20
 const MAX_CHARS_PER_REQUEST = 1500
 const MAX_CONTEXT_CHARS = 500
@@ -26,6 +27,10 @@ type Lang = 'en' | 'es'
 interface Item {
   text: string
   context?: string
+}
+
+function log(stage: string, detail?: unknown) {
+  console.log('[deepl]', stage, detail ?? '')
 }
 
 class HttpError extends Error {
@@ -115,10 +120,12 @@ async function callDeepl(key: string, texts: string[], from: Lang, to: Lang, con
       headers: { Authorization: `DeepL-Auth-Key ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     })
-  } catch {
+  } catch (e) {
+    console.error('[deepl] network error', String(e))
     throw new HttpError(502, 'No pude conectarme con DeepL. Prueba de nuevo en un ratito.', 'deepl_network')
   }
   if (!res.ok) {
+    console.error('[deepl] http', res.status, 'from', from, 'to', to)
     if (res.status === 456) throw new HttpError(429, 'Se agotó el cupo mensual de DeepL.', 'deepl_quota')
     if (res.status === 429) throw new HttpError(429, 'Demasiados pedidos seguidos. Prueba en unos segundos.', 'deepl_rate')
     if (res.status === 403) throw new HttpError(502, 'La clave de DeepL no es válida.', 'deepl_key')
@@ -251,6 +258,8 @@ interface BankRow {
   theme: string
   example: string
   note: string | null
+  /** Significado escrito a mano (español de Chile). Si existe, no hace falta DeepL. */
+  translation: string | null
 }
 
 async function suggest(admin: SupabaseClient, key: string, userId: string, body: Record<string, unknown>) {
@@ -266,26 +275,45 @@ async function suggest(admin: SupabaseClient, key: string, userId: string, body:
   const picks: BankRow[] = []
   for (const tier of LEVELS.slice(LEVELS.indexOf(level))) {
     if (picks.length >= count) break
-    const { data, error } = await admin.from('vocab_bank').select('term, level, theme, example, note').eq('level', tier)
+    const { data, error } = await admin.from('vocab_bank').select('term, level, theme, example, note, translation').eq('level', tier)
     if (error) throw new HttpError(500, 'No se pudo leer el banco de vocabulario.', 'bank_read')
     const fresh = shuffle((data as BankRow[]).filter((r) => !exclude.has(r.term.toLowerCase())))
     picks.push(...fresh.slice(0, count - picks.length))
   }
   if (picks.length === 0) return { suggestions: [], exhausted: true }
 
-  const translations = await translateItems(
-    admin,
-    key,
-    userId,
-    'en',
-    'es',
-    picks.map((p) => ({ text: p.term, context: p.example })),
-    true,
-  )
+  // Las palabras con significado propio no pasan por DeepL: solo se traducen las que no lo tienen.
+  const missing = picks.filter((p) => !p.translation)
+  const translated = missing.length
+    ? await translateItems(admin, key, userId, 'en', 'es', missing.map((p) => ({ text: p.term, context: p.example })), true)
+    : []
+  const byTerm = new Map(missing.map((p, i) => [p.term, translated[i]]))
   return {
-    suggestions: picks.map((p, i) => ({ ...p, translation: translations[i] })),
+    suggestions: picks.map((p) => ({ ...p, translation: p.translation ?? byTerm.get(p.term) ?? '' })),
     exhausted: false,
   }
+}
+
+// Diagnóstico: consulta el consumo real en DeepL (/v2/usage no cobra caracteres) y el del usuario.
+async function status(admin: SupabaseClient, key: string, userId: string) {
+  let deepl: { used: number; limit: number } | { error: string }
+  try {
+    const res = await fetch(DEEPL_USAGE_URL, { headers: { Authorization: `DeepL-Auth-Key ${key}` } })
+    if (res.ok) {
+      const data = await res.json()
+      deepl = { used: data.character_count, limit: data.character_limit }
+    } else {
+      console.error('[deepl] usage http', res.status)
+      deepl = { error: res.status === 403 ? 'La clave de DeepL no es válida.' : 'DeepL no respondió bien.' }
+    }
+  } catch (e) {
+    console.error('[deepl] usage network error', String(e))
+    deepl = { error: 'No pude conectarme con DeepL.' }
+  }
+  const month = new Date().toISOString().slice(0, 7)
+  const { data: usage } = await admin.from('translation_usage').select('chars').eq('user_id', userId).eq('month', month).maybeSingle()
+  const { count } = await admin.from('translation_cache').select('cache_key', { count: 'exact', head: true })
+  return { deepl, user: { used: usage?.chars ?? 0, cap: MONTHLY_CAP_PER_USER }, cacheRows: count ?? 0 }
 }
 
 Deno.serve(async (req: Request) => {
@@ -306,6 +334,12 @@ Deno.serve(async (req: Request) => {
     const { data: key, error: keyError } = await admin.rpc('get_deepl_key')
     if (keyError || !key) throw new HttpError(500, 'La clave de DeepL no está configurada.', 'key')
 
+    log('request', { action: body.action, user: userId.slice(0, 8) })
+
+    if (body.action === 'status') {
+      return respond(await status(admin, key, userId))
+    }
+
     if (body.action === 'translate') {
       const from = body.from as Lang
       const to = body.to as Lang
@@ -323,7 +357,10 @@ Deno.serve(async (req: Request) => {
 
     throw new HttpError(400, 'Acción desconocida.', 'action')
   } catch (e) {
-    if (e instanceof HttpError) return respond({ error: e.message, stage: e.stage }, e.status)
+    if (e instanceof HttpError) {
+      console.error('[deepl] failed', e.stage, e.status, e.message)
+      return respond({ error: e.message, stage: e.stage }, e.status)
+    }
     console.error('unexpected', e)
     return respond({ error: 'Error inesperado en el servidor.', stage: 'unexpected' }, 500)
   }

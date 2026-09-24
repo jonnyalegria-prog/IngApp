@@ -1,5 +1,7 @@
 import { Route, Routes } from 'react-router-dom'
 import AuthGate from './components/AuthGate'
+import ErrorBoundary from './components/ErrorBoundary'
+import ToastProvider from './components/ToastProvider'
 import TopBar from './components/TopBar'
 import NavBar from './components/NavBar'
 import UpdateBanner from './components/UpdateBanner'
@@ -11,22 +13,24 @@ import Diario from './pages/Diario'
 
 function App() {
   return (
-    <>
+    <ToastProvider>
       <AuthGate>
         <TopBar />
         <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-24 pt-6">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/mi-clase" element={<MyClass />} />
-            <Route path="/vocabulario" element={<Vocabulary />} />
-            <Route path="/practicar" element={<Practice />} />
-            <Route path="/diario" element={<Diario />} />
-          </Routes>
+          <ErrorBoundary>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/mi-clase" element={<MyClass />} />
+              <Route path="/vocabulario" element={<Vocabulary />} />
+              <Route path="/practicar" element={<Practice />} />
+              <Route path="/diario" element={<Diario />} />
+            </Routes>
+          </ErrorBoundary>
         </main>
         <NavBar />
       </AuthGate>
       <UpdateBanner />
-    </>
+    </ToastProvider>
   )
 }
 

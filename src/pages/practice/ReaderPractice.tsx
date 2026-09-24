@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
-import { getReadingTexts, type ReadingText } from '../../lib/exerciseBank'
+import { getReadingTexts } from '../../lib/exerciseBank'
 import * as storage from '../../lib/storage'
-import { markPracticed } from '../../lib/storage'
+import { logPractice, markPracticed } from '../../lib/storage'
+import { useLoad } from '../../lib/useLoad'
+import { useToast } from '../../lib/toast'
+import LoadError from '../../components/LoadError'
 import { canSpeak, speak } from '../../lib/speech'
 import { errorMessage, translateOne } from '../../lib/translate'
 import { useVocabStore } from '../../store/useVocabStore'
@@ -22,18 +25,19 @@ interface OpenText {
 }
 
 export default function ReaderPractice() {
-  const [texts, setTexts] = useState<ReadingText[] | null>(null)
+  const load = useLoad(getReadingTexts)
+  const texts = load.data
   const [level, setLevel] = useState<EnglishLevel>('principiante')
   const [open, setOpen] = useState<OpenText | null>(null)
   const [pasted, setPasted] = useState('')
 
   useEffect(() => {
-    getReadingTexts().then(setTexts)
     storage.getSettings().then((s) => setLevel(s.level)).catch(() => {})
   }, [])
 
   if (open) return <Reader text={open} onBack={() => setOpen(null)} />
 
+  if (load.error && !texts) return <LoadError message={load.error} onRetry={load.reload} />
   if (!texts) return <p className="text-slate-400">Cargando...</p>
   const visible = texts.filter((t) => t.level === level)
 
@@ -110,6 +114,7 @@ function cleanWord(raw: string): string {
 
 function Reader({ text, onBack }: { text: OpenText; onBack: () => void }) {
   const { words, loaded, load, addWord } = useVocabStore()
+  const toast = useToast()
   const [selection, setSelection] = useState<Selection | null>(null)
   const [translation, setTranslation] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -124,6 +129,7 @@ function Reader({ text, onBack }: { text: OpenText; onBack: () => void }) {
   async function pick(word: string, sentence: string, at: string) {
     if (!word) return
     markPracticed()
+    logPractice({ kind: 'reading', topic: 'lectura', item: word, correct: true })
     setSelection({ word, sentence, at })
     setTranslation(null)
     setError(null)
@@ -139,8 +145,8 @@ function Reader({ text, onBack }: { text: OpenText; onBack: () => void }) {
 
   async function saveWord() {
     if (!selection || !translation) return
-    await addWord(selection.word, translation, selection.sentence)
-    setJustAdded(true)
+    const result = await toast.run(() => addWord(selection.word, translation, selection.sentence), 'No pude guardar la palabra.')
+    if (result.ok) setJustAdded(true)
   }
 
   return (

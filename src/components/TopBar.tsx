@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { Flame, LogOut, User } from 'lucide-react'
+import { Flame, Languages, LogOut, User } from 'lucide-react'
 import { getSession, signOut } from '../lib/auth'
 import { getSettings, STREAK_UPDATED_EVENT } from '../lib/storage'
+import { errorMessage, fetchTranslateStatus, translateOne, TranslateError } from '../lib/translate'
+import { useToast } from '../lib/toast'
 
 export default function TopBar() {
+  const toast = useToast()
   const [streak, setStreak] = useState(0)
   const [email, setEmail] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -25,6 +28,26 @@ export default function TopBar() {
       .then((s) => setEmail(s?.user.email ?? null))
       .catch(() => {})
   }, [])
+
+  // Prueba de punta a punta: sesión, clave de DeepL, cupo y una traducción real de 19 caracteres.
+  async function testTranslation() {
+    setMenuOpen(false)
+    toast.show('Probando la traducción...')
+    try {
+      const status = await fetchTranslateStatus()
+      const sample = 'Hello, how are you?'
+      const result = await translateOne(sample, { from: 'en', to: 'es' })
+      const usage =
+        'used' in status.deepl
+          ? ` Uso de DeepL este mes: ${status.deepl.used.toLocaleString('es-CL')} de ${status.deepl.limit.toLocaleString('es-CL')} caracteres.`
+          : ` (${status.deepl.error})`
+      toast.show(`Funciona ✅ «${sample}» → «${result}».${usage}`, { kind: 'success', durationMs: 12000 })
+    } catch (err) {
+      const stage = err instanceof TranslateError && err.stage ? ` [${err.stage}]` : ''
+      console.error('Prueba de traducción falló', err)
+      toast.error(`La traducción no funcionó${stage}: ${errorMessage(err)}`)
+    }
+  }
 
   // Cierra el menú al tocar fuera de él.
   useEffect(() => {
@@ -62,6 +85,14 @@ export default function TopBar() {
           {menuOpen && (
             <div className="absolute right-0 top-full z-20 mt-2 w-56 rounded-xl border border-slate-700 bg-slate-900 p-2 shadow-lg">
               {email && <p className="truncate px-2 py-1 text-xs text-slate-400">{email}</p>}
+              <button
+                type="button"
+                onClick={() => void testTranslation()}
+                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-slate-200 hover:bg-slate-800"
+              >
+                <Languages size={16} className="text-slate-400" />
+                Probar la traducción
+              </button>
               <button
                 type="button"
                 onClick={() => signOut()}

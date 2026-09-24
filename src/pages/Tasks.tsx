@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import * as storage from '../lib/storage'
 import { generateCloze } from '../lib/cloze'
 import { daysBetween, localDateString } from '../lib/week'
+import { useLoad } from '../lib/useLoad'
+import { useToast } from '../lib/toast'
+import LoadError from '../components/LoadError'
 import type { HomeworkTask, NotebookEntry } from '../lib/types'
 
 const NO_CLASS = 'sin-clase'
@@ -48,20 +51,27 @@ function groupByClass(tasks: HomeworkTask[]): Group[] {
 }
 
 export default function Tasks() {
-  const [tasks, setTasks] = useState<HomeworkTask[]>([])
-  const [entries, setEntries] = useState<NotebookEntry[]>([])
+  const toast = useToast()
+  const load = useLoad(async () => {
+    const [tasks, entries] = await Promise.all([storage.getHomeworkTasks(), storage.getNotebookEntries()])
+    return { tasks, entries }
+  })
+  const tasks = useMemo(() => load.data?.tasks ?? [], [load.data])
+  const entries = load.data?.entries ?? []
+  const setTasks = (next: HomeworkTask[] | ((prev: HomeworkTask[]) => HomeworkTask[])) =>
+    load.setData((prev) => ({
+      tasks: typeof next === 'function' ? next(prev?.tasks ?? []) : next,
+      entries: prev?.entries ?? [],
+    }))
+
   const [text, setText] = useState('')
   const [chosenDate, setChosenDate] = useState<string | null>(null)
   // Al abrir, las clases con todo hecho quedan plegadas; las nuevas nacen abiertas.
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
-
-  useEffect(() => {
-    Promise.all([storage.getHomeworkTasks(), storage.getNotebookEntries()]).then(([loaded, loadedEntries]) => {
-      setTasks(loaded)
-      setEntries(loadedEntries)
-      setCollapsed(new Set(groupByClass(loaded).filter((g) => g.pending === 0).map((g) => g.key)))
-    })
-  }, [])
+  const [collapsed, setCollapsed] = useState<Set<string> | null>(null)
+  if (load.data && collapsed === null) {
+    setCollapsed(new Set(groupByClass(load.data.tasks).filter((g) => g.pending === 0).map((g) => g.key)))
+  }
+  const collapsedKeys = collapsed ?? new Set<string>()
 
   const today = localDateString()
   const classDate = chosenDate ?? defaultClassDate(entries, today)
@@ -76,10 +86,11 @@ export default function Tasks() {
       createdAt: new Date().toISOString(),
       classDate,
     }
-    await storage.saveHomeworkTask(task)
-    setTasks([task, ...tasks])
+    const result = await toast.run(() => storage.saveHomeworkTask(task), 'No pude guardar la tarea.')
+    if (!result.ok) return
+    setTasks((prev) => [task, ...prev])
     setCollapsed((prev) => {
-      const next = new Set(prev)
+      const next = new Set(prev ?? [])
       next.delete(classDate)
       return next
     })
@@ -89,18 +100,23 @@ export default function Tasks() {
   async function toggleDone(task: HomeworkTask) {
     const done = !task.done
     const updated: HomeworkTask = { ...task, done, completedAt: done ? new Date().toISOString() : undefined }
-    await storage.saveHomeworkTask(updated)
-    setTasks(tasks.map((t) => (t.id === task.id ? updated : t)))
+    const result = await toast.run(() => storage.saveHomeworkTask(updated), 'No pude actualizar la tarea.')
+    if (result.ok) setTasks((prev) => prev.map((t) => (t.id === task.id ? updated : t)))
   }
 
-  async function remove(id: string) {
-    await storage.deleteHomeworkTask(id)
-    setTasks(tasks.filter((t) => t.id !== id))
+  async function remove(task: HomeworkTask) {
+    const result = await toast.run(() => storage.deleteHomeworkTask(task.id), 'No pude borrar la tarea.')
+    if (!result.ok) return
+    setTasks((prev) => prev.filter((t) => t.id !== task.id))
+    toast.undo('Tarea eliminada', async () => {
+      const restored = await toast.run(() => storage.saveHomeworkTask(task), 'No pude recuperar la tarea.')
+      if (restored.ok) setTasks((prev) => [task, ...prev])
+    })
   }
 
   function toggleGroup(key: string) {
     setCollapsed((prev) => {
-      const next = new Set(prev)
+      const next = new Set(prev ?? [])
       if (next.has(key)) next.delete(key)
       else next.add(key)
       return next
@@ -110,6 +126,9 @@ export default function Tasks() {
   const groups = useMemo(() => groupByClass(tasks), [tasks])
   const pending = tasks.filter((t) => !t.done)
   const pendingWithExercise = pending.filter((t) => generateCloze(t.text))
+
+  if (load.error && !load.data) return <LoadError message={load.error} onRetry={load.reload} />
+  if (load.loading) return <p className="text-slate-400">Cargando...</p>
 
   return (
     <div className="flex flex-col gap-6">
@@ -158,7 +177,7 @@ export default function Tasks() {
       )}
 
       {groups.map((group) => {
-        const open = !collapsed.has(group.key)
+        const open = !collapsedKeys.has(group.key)
         const done = group.tasks.length - group.pending
         return (
           <div key={group.key}>
@@ -196,7 +215,7 @@ function TaskRow({
 }: {
   task: HomeworkTask
   onToggle: (task: HomeworkTask) => void
-  onRemove: (id: string) => void
+  onRemove: (task: HomeworkTask) => void
 }) {
   const hasExercise = !!generateCloze(task.text)
   return (
@@ -204,7 +223,7 @@ function TaskRow({
       <input type="checkbox" checked={task.done} onChange={() => onToggle(task)} className="h-4 w-4 accent-violet-600" />
       <span className={`flex-1 text-sm ${task.done ? 'text-slate-400 line-through' : 'text-white'}`}>{task.text}</span>
       {hasExercise && !task.done && <span className="text-xs text-violet-400">✏️ ejercicio</span>}
-      <button onClick={() => onRemove(task.id)} className="text-slate-400 hover:text-red-400">
+      <button onClick={() => onRemove(task)} className="text-slate-400 hover:text-red-400" aria-label="Borrar tarea">
         ✕
       </button>
     </div>

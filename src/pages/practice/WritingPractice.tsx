@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { reviewText, type ReviewResult } from '../../lib/grammarFeedback'
-import { getWritingPrompts, type WritingPromptContent } from '../../lib/exerciseBank'
+import { getWritingPrompts } from '../../lib/exerciseBank'
 import { errorMessage, translateOne } from '../../lib/translate'
-import { markPracticed } from '../../lib/storage'
+import { logPractice, markPracticed } from '../../lib/storage'
+import { normalizeText } from '../../lib/dictation'
+import { useLoad } from '../../lib/useLoad'
+import LoadError from '../../components/LoadError'
 import TranslateLine from '../../components/TranslateLine'
 import GrammarFeedback from '../../components/GrammarFeedback'
 
@@ -38,6 +41,7 @@ function FreeWriting() {
   async function handleCheck() {
     if (!text.trim()) return
     markPracticed()
+    logPractice({ kind: 'writing', topic: 'texto libre', correct: true })
     setChecking(true)
     try {
       setReview(await reviewText(text))
@@ -72,10 +76,6 @@ function FreeWriting() {
   )
 }
 
-function normalize(text: string): string {
-  return text.toLowerCase().replace(/[.,!?'"]/g, '').replace(/\s+/g, ' ').trim()
-}
-
 interface GuidedResult {
   review: ReviewResult | null
   backTranslation?: string
@@ -85,17 +85,15 @@ interface GuidedResult {
 }
 
 function GuidedWriting() {
-  const [prompts, setPrompts] = useState<WritingPromptContent[] | null>(null)
+  const load = useLoad(getWritingPrompts)
+  const prompts = load.data
   const [index, setIndex] = useState(0)
   const [answer, setAnswer] = useState('')
   const [revealed, setRevealed] = useState(false)
   const [checking, setChecking] = useState(false)
   const [result, setResult] = useState<GuidedResult | null>(null)
 
-  useEffect(() => {
-    getWritingPrompts().then(setPrompts)
-  }, [])
-
+  if (load.error && !prompts) return <LoadError message={load.error} onRetry={load.reload} />
   if (!prompts) return <p className="text-slate-400">Cargando...</p>
   if (prompts.length === 0) return <p className="text-slate-400">Aún no hay consignas cargadas.</p>
   const current = prompts[index % prompts.length]
@@ -111,9 +109,12 @@ function GuidedWriting() {
     setResult(null)
     try {
       if (isCloze) {
-        setResult({ review: null, correct: normalize(answer) === normalize(current.example ?? '') })
+        const correct = normalizeText(answer) === normalizeText(current.example ?? '')
+        logPractice({ kind: 'grammar_cloze', topic: 'consignas', item: current.instruction, correct })
+        setResult({ review: null, correct })
         return
       }
+      logPractice({ kind: 'writing', topic: isTranslation ? 'traducción' : 'consignas', item: current.instruction, correct: true })
       // Gramática (LanguageTool) + "retro-traducción": DeepL vuelve tu frase al español
       // para que compares si dice lo que querías decir.
       // En las consignas "Traduce" también se trae la traducción de referencia de DeepL (ya cacheada).

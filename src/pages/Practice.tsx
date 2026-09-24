@@ -1,18 +1,22 @@
 import { useSearchParams } from 'react-router-dom'
+import PathPractice from './practice/PathPractice'
 import VocabPractice from './practice/VocabPractice'
 import GrammarPractice from './practice/GrammarPractice'
 import DictationPractice from './practice/DictationPractice'
+import ListeningPractice from './practice/ListeningPractice'
 import PronunciationPractice from './practice/PronunciationPractice'
 import DialoguePractice from './practice/DialoguePractice'
 import ReaderPractice from './practice/ReaderPractice'
 
-type Tab = 'vocabulario' | 'gramatica' | 'lectura' | 'dictado' | 'pronunciacion' | 'conversacion'
+type Tab = 'ruta' | 'vocabulario' | 'gramatica' | 'lectura' | 'dictado' | 'escucha' | 'pronunciacion' | 'conversacion'
 
 const TABS: { id: Tab; label: string }[] = [
+  { id: 'ruta', label: 'Ruta' },
   { id: 'vocabulario', label: 'Vocabulario' },
   { id: 'gramatica', label: 'Gramática' },
   { id: 'lectura', label: 'Lectura' },
   { id: 'dictado', label: 'Dictado' },
+  { id: 'escucha', label: 'Escucha' },
   { id: 'pronunciacion', label: 'Pronunciación' },
   { id: 'conversacion', label: 'Conversación' },
 ]
@@ -40,10 +44,12 @@ export default function Practice() {
         ))}
       </div>
 
+      {tab === 'ruta' && <PathPractice />}
       {tab === 'vocabulario' && <VocabPractice />}
       {tab === 'gramatica' && <GrammarPractice />}
       {tab === 'lectura' && <ReaderPractice />}
       {tab === 'dictado' && <DictationPractice />}
+      {tab === 'escucha' && <ListeningPractice />}
       {tab === 'pronunciacion' && <PronunciationPractice />}
       {tab === 'conversacion' && <DialoguePractice />}
     </div>

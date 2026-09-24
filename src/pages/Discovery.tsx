@@ -1,7 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import * as storage from '../lib/storage'
 import { getWeekKey } from '../lib/week'
 import { getWeeklySuggestions } from '../lib/suggestions'
+import { useLoad } from '../lib/useLoad'
+import { useToast } from '../lib/toast'
+import LoadError from '../components/LoadError'
 import type { AppSettings, DiscoveryPick, EnglishLevel } from '../lib/types'
 
 const LEVEL_LABELS: Record<EnglishLevel, string> = {
@@ -11,16 +14,21 @@ const LEVEL_LABELS: Record<EnglishLevel, string> = {
 }
 
 export default function Discovery() {
-  const [settings, setSettings] = useState<AppSettings>({ streak: 0, level: 'principiante' })
-  const [picks, setPicks] = useState<DiscoveryPick[]>([])
+  const toast = useToast()
+  const load = useLoad(async () => {
+    const [settings, picks] = await Promise.all([storage.getSettings(), storage.getDiscoveryPicks()])
+    return { settings, picks }
+  })
+  const settings: AppSettings = load.data?.settings ?? { streak: 0, level: 'principiante' }
+  const picks = useMemo(() => load.data?.picks ?? [], [load.data])
+  const setPicks = (next: DiscoveryPick[] | ((prev: DiscoveryPick[]) => DiscoveryPick[])) =>
+    load.setData((prev) => ({
+      settings: prev?.settings ?? { streak: 0, level: 'principiante' },
+      picks: typeof next === 'function' ? next(prev?.picks ?? []) : next,
+    }))
   const [ownText, setOwnText] = useState('')
 
   const weekKey = getWeekKey()
-
-  useEffect(() => {
-    storage.getSettings().then(setSettings)
-    storage.getDiscoveryPicks().then(setPicks)
-  }, [])
 
   const thisWeekPicks = useMemo(() => picks.filter((p) => p.weekKey === weekKey), [picks, weekKey])
   const pastWeeks = useMemo(() => {
@@ -39,8 +47,8 @@ export default function Discovery() {
 
   async function changeLevel(level: EnglishLevel) {
     const updated = { ...settings, level }
-    setSettings(updated)
-    await storage.saveSettings(updated)
+    load.setData((prev) => ({ picks: prev?.picks ?? [], settings: updated }))
+    await toast.run(() => storage.saveSettings(updated), 'No pude guardar tu nivel.')
   }
 
   async function addPick(text: string, source: 'suggestion' | 'own') {
@@ -52,17 +60,26 @@ export default function Discovery() {
       source,
       createdAt: new Date().toISOString(),
     }
-    await storage.saveDiscoveryPick(pick)
-    setPicks([pick, ...picks])
+    const result = await toast.run(() => storage.saveDiscoveryPick(pick), 'No pude guardar eso.')
+    if (!result.ok) return
+    setPicks((prev) => [pick, ...prev])
     setOwnText('')
   }
 
-  async function removePick(id: string) {
-    await storage.deleteDiscoveryPick(id)
-    setPicks(picks.filter((p) => p.id !== id))
+  async function removePick(pick: DiscoveryPick) {
+    const result = await toast.run(() => storage.deleteDiscoveryPick(pick.id), 'No pude borrarlo.')
+    if (!result.ok) return
+    setPicks((prev) => prev.filter((p) => p.id !== pick.id))
+    toast.undo('Eliminado', async () => {
+      const restored = await toast.run(() => storage.saveDiscoveryPick(pick), 'No pude recuperarlo.')
+      if (restored.ok) setPicks((prev) => [pick, ...prev])
+    })
   }
 
   const complete = thisWeekPicks.length >= 3
+
+  if (load.error && !load.data) return <LoadError message={load.error} onRetry={load.reload} />
+  if (load.loading) return <p className="text-slate-400">Cargando...</p>
 
   return (
     <div className="flex flex-col gap-6">
@@ -83,7 +100,11 @@ export default function Discovery() {
             {thisWeekPicks.map((pick) => (
               <div key={pick.id} className="flex items-center justify-between gap-2 rounded-md border border-slate-800 bg-slate-950/50 p-3">
                 <span className="text-sm text-white">{pick.text}</span>
-                <button onClick={() => removePick(pick.id)} className="shrink-0 text-slate-400 hover:text-red-400">
+                <button
+                  onClick={() => void removePick(pick)}
+                  className="shrink-0 text-slate-400 hover:text-red-400"
+                  aria-label="Borrar"
+                >
                   ✕
                 </button>
               </div>
@@ -96,7 +117,7 @@ export default function Discovery() {
             <form
               onSubmit={(e) => {
                 e.preventDefault()
-                addPick(ownText, 'own')
+                void addPick(ownText, 'own')
               }}
               className="flex gap-2"
             >
@@ -121,7 +142,7 @@ export default function Discovery() {
                   <p className="text-sm text-slate-400">¿No se te ocurre nada? Estas son algunas ideas:</p>
                   <select
                     value={settings.level}
-                    onChange={(e) => changeLevel(e.target.value as EnglishLevel)}
+                    onChange={(e) => void changeLevel(e.target.value as EnglishLevel)}
                     className="rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-300"
                   >
                     {(Object.keys(LEVEL_LABELS) as EnglishLevel[]).map((l) => (
@@ -141,7 +162,7 @@ export default function Discovery() {
                           <p className="mt-1 text-xs italic text-slate-400">"{item.example}"</p>
                         </div>
                         <button
-                          onClick={() => addPick(item.title, 'suggestion')}
+                          onClick={() => void addPick(item.title, 'suggestion')}
                           className="shrink-0 rounded-md bg-slate-800 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700"
                         >
                           Usar esta

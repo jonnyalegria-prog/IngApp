@@ -1,35 +1,62 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Dumbbell, Flame, GraduationCap, BookOpen, PenLine, ClipboardList, Lightbulb, Trophy, type LucideIcon } from 'lucide-react'
+import {
+  ArrowRight,
+  BookOpen,
+  ClipboardList,
+  Dumbbell,
+  Flame,
+  GraduationCap,
+  Lightbulb,
+  PenLine,
+  Target,
+  Trophy,
+  type LucideIcon,
+} from 'lucide-react'
 import { useVocabStore } from '../store/useVocabStore'
 import * as storage from '../lib/storage'
 import { getWeekKey, localDateString } from '../lib/week'
 import { exportAllData } from '../lib/exportData'
 import { achievements, calculatePoints } from '../lib/gamification'
-import type { DiscoveryPick, GrammarTopic, HomeworkTask, NotebookEntry, Word } from '../lib/types'
+import { DAILY_GOAL, KIND_TAB, accuracyByKind, answersToday, goalFraction, kindLabel, lastPracticedKind, weakTopics } from '../lib/progress'
+import { nextUnit, UNITS } from '../lib/units'
+import { useLoad } from '../lib/useLoad'
+import LoadError from '../components/LoadError'
+import type { DiscoveryPick, GrammarTopic, HomeworkTask, NotebookEntry, PracticeRow, Word } from '../lib/types'
 
 export default function Dashboard() {
   const { words, loaded, load, dueWords } = useVocabStore()
-  const [tasks, setTasks] = useState<HomeworkTask[]>([])
-  const [picks, setPicks] = useState<DiscoveryPick[]>([])
-  const [notebookEntries, setNotebookEntries] = useState<NotebookEntry[]>([])
-  const [grammarTopics, setGrammarTopics] = useState<GrammarTopic[]>([])
-  const [streak, setStreak] = useState(0)
-  const [practicedToday, setPracticedToday] = useState(false)
+  const data = useLoad(async () => {
+    const [tasks, picks, notebookEntries, grammarTopics, settings, log, units] = await Promise.all([
+      storage.getHomeworkTasks(),
+      storage.getDiscoveryPicks(),
+      storage.getNotebookEntries(),
+      storage.getGrammarTopics(),
+      storage.getSettings(),
+      // El registro de práctica es un extra: si falla, el resto del Inicio igual se ve.
+      storage.getPracticeLog(30).catch((): PracticeRow[] => []),
+      storage.getUnitProgress().catch((): storage.UnitProgress[] => []),
+    ])
+    return { tasks, picks, notebookEntries, grammarTopics, settings, log, units }
+  })
 
   useEffect(() => {
-    if (!loaded) load()
-    storage.getHomeworkTasks().then(setTasks)
-    storage.getDiscoveryPicks().then(setPicks)
-    storage.getNotebookEntries().then(setNotebookEntries)
-    storage.getGrammarTopics().then(setGrammarTopics)
-    storage.getSettings().then((s) => {
-      setStreak(s.streak)
-      setPracticedToday(s.lastPracticeDate === localDateString())
-    })
+    if (!loaded) void load()
   }, [loaded, load])
 
+  if (data.error && !data.data) return <LoadError message={data.error} onRetry={data.reload} />
+  if (!data.data) return <p className="text-slate-400">Cargando...</p>
+
+  const { tasks, picks, notebookEntries, grammarTopics, settings, log, units } = data.data
+  const completedUnits = new Set(units.filter((u) => u.completedAt).map((u) => u.unitId))
+  const upNext = nextUnit(completedUnits)
+  const streak = settings.streak
+  const practicedToday = settings.lastPracticeDate === localDateString()
+  const answered = answersToday(log)
+  const weak = weakTopics(log)
+
   const due = dueWords().length
+  const next = nextStep(due, lastPracticedKind(log))
   const pendingTasks = tasks.filter((t) => !t.done).length
   const tasksCompleted = tasks.filter((t) => t.done).length
   const weekKey = getWeekKey()
@@ -59,7 +86,7 @@ export default function Dashboard() {
 
       <div className="flex items-center gap-4 rounded-2xl border border-amber-700/40 bg-amber-950/20 p-4">
         <Flame size={32} className="shrink-0 text-amber-400" fill="currentColor" />
-        <div>
+        <div className="min-w-0 flex-1">
           <div className="text-xl font-semibold text-white">
             {streak === 0 ? 'Aún sin racha' : `${streak} ${streak === 1 ? 'día' : 'días'} de racha`}
           </div>
@@ -71,7 +98,39 @@ export default function Dashboard() {
                 : 'Practica hoy y parte tu racha.'}
           </div>
         </div>
+        <GoalRing count={answered} />
       </div>
+
+      <Link
+        to={next.to}
+        className="flex items-center justify-between gap-3 rounded-2xl border border-violet-600 bg-violet-950/40 p-4 transition hover:border-violet-400"
+      >
+        <div>
+          <div className="text-xs uppercase tracking-wide text-violet-300">{next.kicker}</div>
+          <div className="text-lg font-semibold text-white">{next.title}</div>
+        </div>
+        <ArrowRight className="shrink-0 text-violet-300" />
+      </Link>
+
+      {upNext && (
+        <Link
+          to={`/practicar?tab=ruta&unit=${upNext.id}`}
+          className="rounded-2xl border border-slate-800 bg-slate-900 p-4 transition hover:border-violet-500"
+        >
+          <div className="flex items-center justify-between text-xs text-slate-400">
+            <span>Tu ruta de aprendizaje</span>
+            <span>
+              {completedUnits.size}/{UNITS.length} unidades
+            </span>
+          </div>
+          <div className="mt-1 text-base font-medium text-white">
+            <span aria-hidden="true">{upNext.emoji}</span> Sigue con: {upNext.title}
+          </div>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-800">
+            <div className="h-full rounded-full bg-violet-500" style={{ width: `${Math.round((completedUnits.size / UNITS.length) * 100)}%` }} />
+          </div>
+        </Link>
+      )}
 
       <div className="grid grid-cols-3 gap-3">
         <StatCard label="Para repasar hoy" value={String(due)} />
@@ -92,6 +151,30 @@ export default function Dashboard() {
           </Link>
         </div>
       </div>
+
+      {weak.length > 0 && (
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+          <div className="mb-2 flex items-center gap-2">
+            <Target size={18} className="text-rose-400" />
+            <h2 className="font-medium text-white">Para reforzar</h2>
+          </div>
+          <p className="mb-3 text-sm text-slate-400">Estos temas te han costado más en las últimas semanas:</p>
+          <div className="flex flex-col gap-2">
+            {weak.map((t) => (
+              <Link
+                key={`${t.kind}|${t.key}`}
+                to={`/practicar?tab=${KIND_TAB[t.kind] ?? 'gramatica'}`}
+                className="flex items-center justify-between rounded-md border border-slate-800 bg-slate-950/50 px-3 py-2 text-sm text-slate-200 hover:border-violet-500"
+              >
+                <span>{t.key}</span>
+                <span className="text-xs text-rose-300">
+                  {t.pct}% bien · {t.total} intentos
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <ActionCard
@@ -130,11 +213,67 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <ProgressSection words={words} picks={picks} tasks={tasks} notebookEntries={notebookEntries} grammarTopics={grammarTopics} />
+      <ProgressSection
+        words={words}
+        picks={picks}
+        tasks={tasks}
+        notebookEntries={notebookEntries}
+        grammarTopics={grammarTopics}
+        log={log}
+      />
 
-      <button onClick={() => exportAllData()} className="self-start text-xs text-slate-400 underline hover:text-slate-300">
+      <button onClick={() => void exportAllData()} className="self-start text-xs text-slate-400 underline hover:text-slate-300">
         Exportar mis datos (backup)
       </button>
+    </div>
+  )
+}
+
+interface NextStep {
+  to: string
+  kicker: string
+  title: string
+}
+
+// El botón grande del Inicio: lo que toca ahora, o seguir con lo último que hiciste.
+function nextStep(due: number, lastKind: string | null): NextStep {
+  if (due > 0) {
+    return { to: '/practicar?tab=vocabulario', kicker: 'Te toca hoy', title: `Repasar ${due} ${due === 1 ? 'palabra' : 'palabras'}` }
+  }
+  const tab = lastKind ? KIND_TAB[lastKind] : undefined
+  if (lastKind && tab) {
+    return { to: `/practicar?tab=${tab}`, kicker: 'Seguir donde quedaste', title: kindLabel(lastKind) }
+  }
+  return { to: '/practicar', kicker: 'Para empezar', title: 'Elige qué practicar' }
+}
+
+function GoalRing({ count }: { count: number }) {
+  const size = 64
+  const stroke = 6
+  const r = (size - stroke) / 2
+  const circumference = 2 * Math.PI * r
+  const done = count >= DAILY_GOAL
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }} title="Meta de hoy">
+      <svg width={size} height={size} className="-rotate-90" aria-hidden="true">
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" strokeWidth={stroke} className="text-slate-800" />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference * (1 - goalFraction(count))}
+          className={done ? 'text-emerald-400' : 'text-amber-400'}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center leading-tight">
+        <span className="text-sm font-semibold text-white">{done ? '✓' : Math.min(count, DAILY_GOAL)}</span>
+        <span className="text-[10px] text-slate-400">de {DAILY_GOAL}</span>
+      </div>
     </div>
   )
 }
@@ -161,13 +300,16 @@ function ProgressSection({
   tasks,
   notebookEntries,
   grammarTopics,
+  log,
 }: {
   words: Word[]
   picks: DiscoveryPick[]
   tasks: HomeworkTask[]
   notebookEntries: NotebookEntry[]
   grammarTopics: GrammarTopic[]
+  log: PracticeRow[]
 }) {
+  const accuracy = accuracyByKind(log)
   const wordsPerWeek = weeklyBuckets(words, (w) => getWeekKey(new Date(w.createdAt)), 8)
   const picksPerWeek = weeklyBuckets(picks, (p) => p.weekKey, 8)
   const tasksDonePerWeek = weeklyBuckets(
@@ -206,6 +348,24 @@ function ProgressSection({
         <MiniBarChart title="Tareas completadas por semana" data={tasksDonePerWeek} color="#f59e0b" />
         <MiniBarChart title="Clases registradas por semana" data={classesPerWeek} color="#38bdf8" />
       </div>
+      {accuracy.length > 0 && (
+        <div className="mt-5">
+          <p className="mb-2 text-xs text-slate-400">Cuánto aciertas en cada práctica (últimos 30 días)</p>
+          <div className="flex flex-col gap-2">
+            {accuracy.map((a) => (
+              <div key={a.key} className="flex items-center gap-3 text-xs">
+                <span className="w-32 shrink-0 truncate text-slate-300">{kindLabel(a.key)}</span>
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-800">
+                  <div className="h-full rounded-full bg-emerald-500" style={{ width: `${a.pct}%` }} />
+                </div>
+                <span className="w-16 shrink-0 text-right text-slate-400">
+                  {a.pct}% · {a.total}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

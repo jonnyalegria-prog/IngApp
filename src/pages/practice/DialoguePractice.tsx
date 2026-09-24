@@ -1,18 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { canSpeak, speak } from '../../lib/speech'
 import { getDialogues, type DialogueContent } from '../../lib/exerciseBank'
-import { markPracticed } from '../../lib/storage'
+import { logPractice, markPracticed } from '../../lib/storage'
+import { useLoad } from '../../lib/useLoad'
+import LoadError from '../../components/LoadError'
 import TranslateLine from '../../components/TranslateLine'
 
 export default function DialoguePractice() {
-  const [dialogues, setDialogues] = useState<DialogueContent[] | null>(null)
+  const load = useLoad(getDialogues)
+  const dialogues = load.data
   const [active, setActive] = useState<DialogueContent | null>(null)
   const [nodeId, setNodeId] = useState('start')
   const [history, setHistory] = useState<{ speaker: 'npc' | 'you'; text: string }[]>([])
-
-  useEffect(() => {
-    getDialogues().then(setDialogues)
-  }, [])
 
   function startDialogue(d: DialogueContent) {
     setActive(d)
@@ -28,6 +27,8 @@ export default function DialoguePractice() {
     markPracticed()
     setHistory((h) => [...h, { speaker: 'you', text: label }, { speaker: nextNode.speaker, text: nextNode.text }])
     setNodeId(next)
+    // Cada respuesta cuenta para la meta del día; al llegar al final del diálogo queda anotado el escenario.
+    logPractice({ kind: 'dialogue', topic: active.scenario.slice(0, 60), item: label, correct: true })
   }
 
   function exit() {
@@ -35,6 +36,7 @@ export default function DialoguePractice() {
     setHistory([])
   }
 
+  if (load.error && !dialogues) return <LoadError message={load.error} onRetry={load.reload} />
   if (!dialogues) return <p className="text-slate-400">Cargando...</p>
 
   if (!active) {

@@ -90,6 +90,17 @@ export async function translateOne(
   return result
 }
 
+export interface TranslateStatus {
+  deepl: { used: number; limit: number } | { error: string }
+  user: { used: number; cap: number }
+  cacheRows: number
+}
+
+/** Diagnóstico: consumo real de DeepL, consumo tuyo este mes y cuántas traducciones hay guardadas. */
+export function fetchTranslateStatus(): Promise<TranslateStatus> {
+  return invoke({ action: 'status' })
+}
+
 export async function fetchVocabSuggestions(
   level: EnglishLevel,
   count: number,

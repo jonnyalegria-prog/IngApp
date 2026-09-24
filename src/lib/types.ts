@@ -50,6 +50,15 @@ export interface DiscoveryPick {
   createdAt: string
 }
 
+/** Una respuesta de práctica ya guardada (ver storage.logPractice). */
+export interface PracticeRow {
+  kind: string
+  topic?: string
+  item?: string
+  correct: boolean
+  createdAt: string
+}
+
 export type EnglishLevel = 'principiante' | 'intermedio' | 'avanzado'
 
 export interface AppSettings {

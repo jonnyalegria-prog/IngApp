@@ -16,6 +16,10 @@ export interface ParseResult {
 const MAX_VOCAB_LINE_LENGTH = 70
 const MAX_TERM_WORDS = 4
 const MAX_TRANSLATION_WORDS = 6
+// Frases completas con su traducción ("What do you do for a living? = ¿A qué te dedicas?"): más largas que una palabra.
+const MAX_PHRASE_LINE_LENGTH = 140
+const MAX_PHRASE_WORDS = 10
+const MAX_PHRASE_MEANING_WORDS = 12
 
 const TASK_KEYWORDS = /\b(practicar|aprender|estudiar|buscar|investigar|repasar|memorizar|tarea|tareas|deberes)\b/i
 // "ver" only counts as a task when it LEADS the line (e.g. "Ver tal video").
@@ -205,14 +209,19 @@ function capitalize(text: string): string {
 // tampoco separan una hora ("5:30").
 const PAIR_SEPARATOR = /\s+[-–—=]\s+|\s*(?:→|->|=>)\s*|\s*:\s+|\s*=\s*/
 
-function splitPair(line: string): { left: string; right: string } | null {
+function splitPair(line: string): { left: string; right: string; sep: string } | null {
   const paren = line.match(/^(.*?)\s*\(([^)]+)\)\s*$/)
-  if (paren && paren[1].trim()) return { left: paren[1].trim(), right: paren[2].trim() }
+  if (paren && paren[1].trim()) {
+    // "What do you do? = (¿A qué te dedicas?)": el signo antes del paréntesis también es separador.
+    const left = paren[1].replace(/\s*(?:=>|->|[=→:–—-])\s*$/, '').trim()
+    const explicit = left !== paren[1].trim()
+    return left ? { left, right: paren[2].trim(), sep: explicit ? '=' : '()' } : null
+  }
   const m = PAIR_SEPARATOR.exec(line)
   if (!m || m.index === 0) return null
   const left = line.slice(0, m.index).trim()
   const right = line.slice(m.index + m[0].length).trim()
-  return left && right ? { left, right } : null
+  return left && right ? { left, right, sep: m[0].trim() } : null
 }
 
 // El inglés va primero. Si la izquierda suena claramente más a español que la derecha, se da vuelta.
@@ -246,6 +255,21 @@ function toVocab(line: string): ClassifiedLine | null {
   return { kind: 'vocab', text: line, term, meaning, swapped }
 }
 
+// Una frase entera con su traducción ("How are you? = ¿Cómo estás?"). Solo con "=" o flecha (los dos puntos,
+// el guion y los paréntesis suelen ser una explicación) y solo si un lado suena claramente a inglés y el
+// otro tiene pistas claras de español.
+function toPhrasePair(line: string): ClassifiedLine | null {
+  if (line.length > MAX_PHRASE_LINE_LENGTH) return null
+  const pair = splitPair(line)
+  if (!pair || !['=', '→', '->', '=>'].includes(pair.sep)) return null
+  if (isLabel(pair.left)) return null
+  const { term, meaning, swapped } = orient(pair.left, pair.right)
+  if (wordCount(term) > MAX_PHRASE_WORDS || wordCount(meaning) > MAX_PHRASE_MEANING_WORDS) return null
+  if (!HAS_LETTER.test(term) || !HAS_LETTER.test(meaning)) return null
+  if (spanishScore(term) > -2 || spanishScore(meaning) < 1) return null
+  return { kind: 'vocab', text: line, term, meaning, swapped }
+}
+
 // Una palabra o expresión en inglés sola en su línea ("to give up", "beautiful"): vocabulario a la espera
 // de su significado. Solo si hay pistas claras de que es inglés: una palabra suelta sin acento ("colores",
 // "familia") se ve igual en los dos idiomas y, si se tratara como inglés, apuntes en español quedarían llenos
@@ -273,7 +297,7 @@ function stripBullet(line: string): string {
 function classifyLine(line: string): ClassifiedLine {
   const label = line.match(TASK_LABEL)
   if (label && line.length > label[0].length) return { kind: 'task', text: capitalize(line.slice(label[0].length).trim()) }
-  const vocab = toVocab(line)
+  const vocab = toVocab(line) ?? toPhrasePair(line)
   if (vocab) return vocab
   if (isTaskLine(line)) return { kind: 'task', text: line }
   return toLoneWord(line) ?? { kind: 'grammar', text: line }

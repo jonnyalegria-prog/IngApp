@@ -1,8 +1,10 @@
 import type { Word } from './types'
 
 // Simplified SM-2 spaced repetition algorithm.
-// quality: 1 = "again", 3 = "hard", 5 = "easy"
-export function reviewWord(word: Word, quality: 1 | 3 | 5): Word {
+// quality: 1 = "otra vez" (fallé), 3 = "difícil", 4 = "bien", 5 = "fácil"
+export type ReviewQuality = 1 | 3 | 4 | 5
+
+export function reviewWord(word: Word, quality: ReviewQuality): Word {
   const now = new Date()
   let { interval, repetitions, easeFactor } = word
 
@@ -33,6 +35,11 @@ export function reviewWord(word: Word, quality: 1 | 3 | 5): Word {
 
 export function isDue(word: Word): boolean {
   return new Date(word.dueDate).getTime() <= Date.now()
+}
+
+/** Una palabra "nueva" es la que todavía nunca se repasó. */
+export function isNewWord(word: Word): boolean {
+  return !word.lastReviewed
 }
 
 export function newWordSrsState() {
