@@ -242,7 +242,7 @@ export async function deleteDiscoveryPick(id: string): Promise<void> {
 // --- Ajustes y racha --------------------------------------------------------
 
 // La sesión se lee del almacenamiento local (sin pedir nada a la red, salvo que haya que renovarla).
-async function currentUserId(): Promise<string> {
+export async function currentUserId(): Promise<string> {
   const { data } = await supabase.auth.getSession()
   const id = data.session?.user.id
   if (!id) throw new Error('No hay sesión activa')

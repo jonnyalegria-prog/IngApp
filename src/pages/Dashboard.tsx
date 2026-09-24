@@ -20,14 +20,16 @@ import { exportAllData } from '../lib/exportData'
 import { achievements, calculatePoints } from '../lib/gamification'
 import { DAILY_GOAL, KIND_TAB, accuracyByKind, answersToday, goalFraction, kindLabel, lastPracticedKind, weakTopics } from '../lib/progress'
 import { nextUnit, UNITS } from '../lib/units'
+import { getPartnerOverview } from '../lib/social'
 import { useLoad } from '../lib/useLoad'
 import LoadError from '../components/LoadError'
+import PartnerCard from '../components/PartnerCard'
 import type { DiscoveryPick, GrammarTopic, HomeworkTask, NotebookEntry, PracticeRow, Word } from '../lib/types'
 
 export default function Dashboard() {
   const { words, loaded, load, dueWords } = useVocabStore()
   const data = useLoad(async () => {
-    const [tasks, picks, notebookEntries, grammarTopics, settings, log, units] = await Promise.all([
+    const [tasks, picks, notebookEntries, grammarTopics, settings, log, units, partner] = await Promise.all([
       storage.getHomeworkTasks(),
       storage.getDiscoveryPicks(),
       storage.getNotebookEntries(),
@@ -36,8 +38,9 @@ export default function Dashboard() {
       // El registro de práctica es un extra: si falla, el resto del Inicio igual se ve.
       storage.getPracticeLog(30).catch((): PracticeRow[] => []),
       storage.getUnitProgress().catch((): storage.UnitProgress[] => []),
+      getPartnerOverview().catch(() => null),
     ])
-    return { tasks, picks, notebookEntries, grammarTopics, settings, log, units }
+    return { tasks, picks, notebookEntries, grammarTopics, settings, log, units, partner }
   })
 
   useEffect(() => {
@@ -47,7 +50,7 @@ export default function Dashboard() {
   if (data.error && !data.data) return <LoadError message={data.error} onRetry={data.reload} />
   if (!data.data) return <p className="text-slate-400">Cargando...</p>
 
-  const { tasks, picks, notebookEntries, grammarTopics, settings, log, units } = data.data
+  const { tasks, picks, notebookEntries, grammarTopics, settings, log, units, partner } = data.data
   const completedUnits = new Set(units.filter((u) => u.completedAt).map((u) => u.unitId))
   const upNext = nextUnit(completedUnits)
   const streak = settings.streak
@@ -130,6 +133,13 @@ export default function Dashboard() {
             <div className="h-full rounded-full bg-violet-500" style={{ width: `${Math.round((completedUnits.size / UNITS.length) * 100)}%` }} />
           </div>
         </Link>
+      )}
+
+      {partner && (
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+          <h2 className="mb-2 font-medium text-white">Reto en pareja 💪</h2>
+          <PartnerCard partner={partner} />
+        </div>
       )}
 
       <div className="grid grid-cols-3 gap-3">
@@ -222,9 +232,14 @@ export default function Dashboard() {
         log={log}
       />
 
-      <button onClick={() => void exportAllData()} className="self-start text-xs text-slate-400 underline hover:text-slate-300">
-        Exportar mis datos (backup)
-      </button>
+      <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs">
+        <Link to="/ajustes" className="text-slate-400 underline hover:text-slate-300">
+          Ajustes: recordatorios, compartir con mi profe y reto en pareja
+        </Link>
+        <button onClick={() => void exportAllData()} className="text-slate-400 underline hover:text-slate-300">
+          Exportar mis datos (backup)
+        </button>
+      </div>
     </div>
   )
 }

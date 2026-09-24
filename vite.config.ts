@@ -17,6 +17,8 @@ export default defineConfig({
       // en vez de quedar activa recién en la visita siguiente.
       registerType: 'prompt',
       includeAssets: ['favicon.svg', 'icon.svg', 'apple-touch-icon.png'],
+      // Los avisos push (recordatorios) viven en un archivo aparte que el service worker carga.
+      workbox: { importScripts: ['push-handlers.js'] },
       manifest: {
         name: 'IngApp - Práctica de inglés',
         short_name: 'IngApp',

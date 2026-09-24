@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Flame, Languages, LogOut, User } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Flame, Languages, LogOut, Settings, User } from 'lucide-react'
 import { getSession, signOut } from '../lib/auth'
 import { getSettings, STREAK_UPDATED_EVENT } from '../lib/storage'
 import { errorMessage, fetchTranslateStatus, translateOne, TranslateError } from '../lib/translate'
@@ -85,6 +86,14 @@ export default function TopBar() {
           {menuOpen && (
             <div className="absolute right-0 top-full z-20 mt-2 w-56 rounded-xl border border-slate-700 bg-slate-900 p-2 shadow-lg">
               {email && <p className="truncate px-2 py-1 text-xs text-slate-400">{email}</p>}
+              <Link
+                to="/ajustes"
+                onClick={() => setMenuOpen(false)}
+                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-slate-200 hover:bg-slate-800"
+              >
+                <Settings size={16} className="text-slate-400" />
+                Ajustes
+              </Link>
               <button
                 type="button"
                 onClick={() => void testTranslation()}
