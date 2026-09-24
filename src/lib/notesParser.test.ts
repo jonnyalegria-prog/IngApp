@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { classifyNotes, extractClassDate, pairFromLine, parseNotes, spanishScore } from './notesParser'
+import { classifyNotes, extractClassDate, looksReversed, pairFromLine, parseNotes, spanishScore } from './notesParser'
 
 // Resultado resumido de una sola línea: V = vocabulario con significado, L = vocabulario sin significado,
 // T = tarea, G = gramática.
@@ -222,5 +222,29 @@ describe('classifyNotes: frases completas', () => {
 
   it('un lado sin pistas de español no cuenta como traducción', () => {
     expect(one('She goes to school every morning = presente simple').kind).toBe('grammar')
+  })
+})
+
+describe('looksReversed', () => {
+  it('detecta las palabras que quedaron con el español arriba', () => {
+    expect(looksReversed('ustedes', 'you')).toBe(true)
+    expect(looksReversed('tú', 'you')).toBe(true)
+    expect(looksReversed('rendirse', 'to give up')).toBe(true)
+  })
+
+  it('no marca las que están bien ni las que se escriben igual en los dos idiomas', () => {
+    expect(looksReversed('you', 'tú')).toBe(false)
+    expect(looksReversed('to give up', 'rendirse')).toBe(false)
+    expect(looksReversed('family', 'familia')).toBe(false)
+    expect(looksReversed('hotel', 'hotel')).toBe(false)
+    expect(looksReversed('run', 'correr')).toBe(false)
+  })
+
+  it('las palabras del banco no salen marcadas', () => {
+    const pairs: [string, string][] = [
+      ['red', 'rojo'], ['mother', 'madre, mamá'], ['weekend', 'fin de semana'], ['What do you do for a living?', '¿A qué te dedicas?'],
+      ['to look', 'mirar'], ['busy', 'ocupado'], ['sensible', 'sensato'], ['information', 'información'], ['library', 'biblioteca'],
+    ]
+    for (const [term, translation] of pairs) expect(looksReversed(term, translation), `${term} = ${translation}`).toBe(false)
   })
 })

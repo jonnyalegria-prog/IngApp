@@ -231,6 +231,15 @@ function orient(left: string, right: string): { term: string; meaning: string; s
     : { term: left, meaning: right, swapped: false }
 }
 
+/**
+ * ¿Una palabra guardada está al revés (el español arriba y el inglés como significado)? Solo dice que sí cuando el
+ * significado suena claramente a inglés, para no confundirse con palabras que se escriben igual en los dos idiomas.
+ */
+export function looksReversed(term: string, translation: string): boolean {
+  const meaningScore = spanishScore(translation)
+  return meaningScore <= -1 && spanishScore(term) - meaningScore >= 2
+}
+
 /** Para pasar una línea a vocabulario a mano: separa y ordena "palabra - significado". */
 export function pairFromLine(line: string): { term: string; meaning: string; swapped: boolean } | null {
   const pair = splitPair(line)

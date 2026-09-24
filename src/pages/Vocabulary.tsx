@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Pencil, X } from 'lucide-react'
+import { ArrowLeftRight, Pencil, X } from 'lucide-react'
 import { useVocabStore, type AddResult } from '../store/useVocabStore'
 import { speak, canSpeak } from '../lib/speech'
 import { isDue } from '../lib/srs'
+import { looksReversed } from '../lib/notesParser'
+import { termKey } from '../lib/classSave'
 import { errorMessage, matchCase, translateOne } from '../lib/translate'
 import { friendlyError } from '../lib/errors'
 import { useToast } from '../lib/toast'
@@ -39,6 +41,41 @@ export default function Vocabulary() {
     }
   }
 
+  // Da vuelta una palabra que quedó con el español arriba. Si el inglés ya existe, se suma el significado a esa
+  // palabra y se borra la repetida (todo se puede deshacer).
+  async function handleSwap(word: Word) {
+    const term = word.translation.trim()
+    const translation = word.term.trim()
+    const original = { term: word.term, translation: word.translation, example: word.example }
+    const existing = words.find((w) => w.id !== word.id && termKey(w.term) === termKey(term))
+
+    if (!existing) {
+      const result = await toast.run(() => updateWord(word.id, { term, translation, example: word.example }), 'No pude darla vuelta.')
+      if (result.ok) {
+        toast.undo(`Di vuelta «${word.term}»: ahora es «${term}»`, async () => {
+          await toast.run(() => updateWord(word.id, original), 'No pude deshacerlo.')
+        })
+      }
+      return
+    }
+
+    const known = existing.translation.split(/[,;/]/).map((part) => part.trim().toLowerCase())
+    const merged = known.includes(translation.toLowerCase()) ? existing.translation : `${existing.translation}, ${translation}`
+    const before = { term: existing.term, translation: existing.translation, example: existing.example }
+    const result = await toast.run(async () => {
+      await updateWord(existing.id, { term: existing.term, translation: merged, example: existing.example })
+      await removeWord(word.id)
+    }, 'No pude juntarlas.')
+    if (result.ok) {
+      toast.undo(`Junté «${word.term}» con «${existing.term}»`, async () => {
+        await toast.run(async () => {
+          await restoreWord(word)
+          await updateWord(existing.id, before)
+        }, 'No pude deshacerlo.')
+      })
+    }
+  }
+
   async function handleUpdate(id: string, patch: { term: string; translation: string; example?: string }) {
     try {
       return await updateWord(id, patch)
@@ -63,7 +100,7 @@ export default function Vocabulary() {
       {error && !loaded && <LoadError message={error} onRetry={() => void load()} />}
       <AddWordForm onAdd={handleAdd} />
       <VocabSuggestions onAdd={handleAdd} />
-      <WordList words={words} onRemove={handleRemove} onUpdate={handleUpdate} />
+      <WordList words={words} onRemove={handleRemove} onUpdate={handleUpdate} onSwap={handleSwap} />
     </div>
   )
 }
@@ -181,9 +218,11 @@ function WordList({
   words,
   onRemove,
   onUpdate,
+  onSwap,
 }: {
   words: Word[]
   onRemove: (word: Word) => Promise<void>
+  onSwap: (word: Word) => Promise<void>
   onUpdate: (id: string, patch: { term: string; translation: string; example?: string }) => Promise<AddResult | 'updated' | 'error'>
 }) {
   const [query, setQuery] = useState('')
@@ -236,6 +275,17 @@ function WordList({
                 </div>
                 <div className="text-sm text-slate-400">{word.translation}</div>
                 {word.example && <div className="text-xs italic text-slate-400">"{word.example}"</div>}
+                {looksReversed(word.term, word.translation) && (
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-amber-300">
+                    ¿Está al revés? El inglés debería ir arriba.
+                    <button
+                      onClick={() => void onSwap(word)}
+                      className="inline-flex items-center gap-1 rounded-md bg-amber-500/20 px-2 py-1 text-amber-200 hover:bg-amber-500/30"
+                    >
+                      <ArrowLeftRight size={12} /> Dar vuelta
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="flex shrink-0 items-center gap-1">
                 <button
@@ -298,6 +348,16 @@ function EditRow({
         translate="no"
         className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white"
       />
+      <button
+        type="button"
+        onClick={() => {
+          setTerm(translation)
+          setTranslation(term)
+        }}
+        className="inline-flex items-center gap-1 self-start rounded-md bg-slate-800 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-700"
+      >
+        <ArrowLeftRight size={13} /> Dar vuelta inglés y español
+      </button>
       <input
         value={translation}
         onChange={(e) => setTranslation(e.target.value)}
